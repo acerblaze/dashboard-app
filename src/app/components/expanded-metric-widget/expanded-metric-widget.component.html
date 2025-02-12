@@ -1,0 +1,37 @@
+<div class="expanded-metric-widget">
+  <!-- Header with title and controls -->
+  <div class="widget-header">
+    <h3>{{ metricLabel }}</h3>
+    <div class="widget-controls">
+      <a [routerLink]="['/metric', metricType]" class="details-link">
+        Details →
+      </a>
+    </div>
+  </div>
+
+  <!-- Progress indicator -->
+  <div class="progress-container">
+    <div class="progress-bar" [style.width.%]="progressPercentage">
+      <div class="progress-label">
+        {{ progressPercentage | number:'1.0-0' }}%
+      </div>
+    </div>
+  </div>
+
+  <!-- Metric values -->
+  <div class="metric-values">
+    <div class="current-value">
+      <span class="label">Current Value:</span>
+      <span class="value">{{ currentValue | number }}</span>
+    </div>
+    <div class="target-value">
+      <span class="label">Monthly Target:</span>
+      <span class="value">{{ metricData.monthlyTarget | number }}</span>
+    </div>
+  </div>
+
+  <!-- Target status -->
+  <div class="target-status" [class.reached]="isTargetReached">
+    {{ isTargetReached ? 'Target Reached! 🎉' : 'Target Not Yet Reached' }}
+  </div>
+</div>

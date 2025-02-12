@@ -1,0 +1,102 @@
+.expanded-metric-widget {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  grid-column: span 2;
+  grid-row: span 2;
+
+  .widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    .widget-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+
+      .details-link {
+        text-decoration: none;
+        color: #007bff;
+        font-weight: 500;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+
+  .progress-container {
+    background: #f0f0f0;
+    border-radius: 10px;
+    height: 24px;
+    overflow: hidden;
+    position: relative;
+
+    .progress-bar {
+      background: linear-gradient(90deg, #007bff, #00bfff);
+      height: 100%;
+      transition: width 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 24px;
+
+      .progress-label {
+        color: white;
+        font-weight: 500;
+        font-size: 0.9rem;
+      }
+    }
+  }
+
+  .metric-values {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+
+    .current-value,
+    .target-value {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      .label {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #333;
+      }
+    }
+  }
+
+  .target-status {
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f8f9fa;
+    color: #666;
+    font-weight: 500;
+
+    &.reached {
+      background: #d4edda;
+      color: #155724;
+    }
+  }
+}

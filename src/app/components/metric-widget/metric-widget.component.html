@@ -1,15 +1,10 @@
-<div class="metric-widget" [class.large]="size === 'large'">
-  <!-- Header with title and controls -->
+<div class="metric-widget">
+  <!-- Header with title -->
   <div class="widget-header">
     <h3>{{ metricLabel }}</h3>
-    <div class="widget-controls">
-      <button class="size-toggle" (click)="toggleSize()">
-        {{ size === 'small' ? '↔' : '↙' }}
-      </button>
-      <a [routerLink]="['/metric', metricType]" class="details-link">
-        Details →
-      </a>
-    </div>
+    <a [routerLink]="['/metric', metricType]" class="details-link">
+      →
+    </a>
   </div>
 
   <!-- Progress indicator -->
@@ -21,25 +16,8 @@
     </div>
   </div>
 
-  <!-- Metric values -->
-  <div class="metric-values">
-    <div class="current-value">
-      <span class="label">Current Value:</span>
-      <span class="value">{{ currentValue | number }}</span>
-    </div>
-    
-    @if (size === 'large') {
-      <div class="target-value">
-        <span class="label">Monthly Target:</span>
-        <span class="value">{{ metricData.monthlyTarget | number }}</span>
-      </div>
-    }
+  <!-- Current value -->
+  <div class="current-value">
+    {{ currentValue | number }}
   </div>
-
-  <!-- Target status - only shown in large view -->
-  @if (size === 'large') {
-    <div class="target-status" [class.reached]="isTargetReached">
-      {{ isTargetReached ? 'Target Reached! 🎉' : 'Target Not Yet Reached' }}
-    </div>
-  }
 </div>

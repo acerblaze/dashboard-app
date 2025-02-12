@@ -5,19 +5,20 @@ import { DashboardStateService, MetricType } from '../../services/dashboard-stat
 import { MetricData } from '../../data/mock-metrics';
 
 @Component({
-  selector: 'app-metric-widget',
+  selector: 'app-expanded-metric-widget',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  templateUrl: './metric-widget.component.html',
-  styleUrl: './metric-widget.component.scss'
+  templateUrl: './expanded-metric-widget.component.html',
+  styleUrl: './expanded-metric-widget.component.scss'
 })
-export class MetricWidgetComponent implements OnInit {
+export class ExpandedMetricWidgetComponent implements OnInit {
   @Input() metricType!: MetricType;
   @Input() metricData!: MetricData;
   @Input() id!: number;
 
   currentValue: number = 0;
   progressPercentage: number = 0;
+  isTargetReached: boolean = false;
 
   constructor(private dashboardState: DashboardStateService) {}
 
@@ -42,6 +43,7 @@ export class MetricWidgetComponent implements OnInit {
 
     // Calculate progress percentage
     this.progressPercentage = (this.currentValue / this.metricData.monthlyTarget) * 100;
+    this.isTargetReached = this.progressPercentage >= 100;
   }
 
   get metricLabel(): string {

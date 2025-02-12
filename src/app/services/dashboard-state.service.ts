@@ -33,12 +33,12 @@ export class DashboardStateService {
     return this.deviceTypeSubject.value;
   }
 
-  addWidget(type: MetricType): void {
+  addWidget(type: MetricType, initialSize: WidgetSize = 'small'): void {
     const widgets = this.widgetsSubject.value;
     widgets.push({
       id: this.nextWidgetId++,
       type,
-      size: 'small'
+      size: initialSize
     });
     this.widgetsSubject.next(widgets);
   }

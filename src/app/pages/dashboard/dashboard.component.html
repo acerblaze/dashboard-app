@@ -2,39 +2,52 @@
   <header class="dashboard-header">
     <h1>Analytics Dashboard</h1>
     <app-device-filter></app-device-filter>
-    <button class="add-widget-btn" (click)="addWidget()">
-      <span class="icon">+</span>
-      Add Widget
-    </button>
+    <div class="add-widget-dropdown">
+      <button class="add-widget-btn" (click)="toggleDropdown()">
+        <span class="icon">+</span>
+        Add Widget
+      </button>
+      <div class="dropdown-menu" [class.show]="isDropdownOpen">
+        <button class="dropdown-item" (click)="addWidget('users')">
+          Users Widget
+        </button>
+        <button class="dropdown-item" (click)="addWidget('pageViews')">
+          Page Views Widget
+        </button>
+      </div>
+    </div>
   </header>
 
   <div class="dashboard-content">
     <div 
       class="widgets-container"
       cdkDropList
-      cdkDropListOrientation="horizontal"
-      [cdkDropListAutoScrollStep]="50"
       (cdkDropListDropped)="onDrop($event)"
     >
       @for (widget of widgets; track widget.id) {
-        <app-metric-widget
+        <div 
+          class="widget-wrapper"
+          [class.large]="widget.size === 'large'"
           cdkDrag
-          [id]="widget.id"
-          [metricType]="widget.type"
-          [metricData]="metricsData[widget.type]"
-          [size]="widget.size"
-          class="widget-item"
+          cdkDragHandle
         >
-          <!-- Simple placeholder that matches the original size -->
-          <div 
-            *cdkDragPlaceholder 
-            class="widget-placeholder"
-            [class.large]="widget.size === 'large'"
-          ></div>
-        </app-metric-widget>
+          <div class="widget-content" (click)="toggleWidgetSize(widget)">
+            @if (widget.size === 'small') {
+              <app-metric-widget
+                [id]="widget.id"
+                [metricType]="widget.type"
+                [metricData]="metricsData[widget.type]"
+              ></app-metric-widget>
+            } @else {
+              <app-expanded-metric-widget
+                [id]="widget.id"
+                [metricType]="widget.type"
+                [metricData]="metricsData[widget.type]"
+              ></app-expanded-metric-widget>
+            }
+          </div>
+        </div>
       }
     </div>
-
-  
   </div>
 </div>

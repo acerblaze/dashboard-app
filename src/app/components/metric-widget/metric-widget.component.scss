@@ -1,17 +1,14 @@
 .metric-widget {
   background: white;
-  border-radius: 8px;
-  padding: 1rem;
+  border-radius: 12px;
+  padding: 15px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-
-  &.large {
-    grid-column: span 2;
-  }
+  gap: 12px;
+  grid-column: span 1;
+  grid-row: span 1;
 
   .widget-header {
     display: flex;
@@ -20,92 +17,50 @@
 
     h3 {
       margin: 0;
-      font-size: 1.2rem;
-      color: #333;
+      font-size: 1.1rem;
+      font-weight: 600;
     }
 
-    .widget-controls {
-      display: flex;
-      gap: 0.5rem;
-
-      .size-toggle, .details-link {
-        padding: 0.25rem 0.5rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        background: white;
-        cursor: pointer;
-        font-size: 0.9rem;
-        color: #666;
-        text-decoration: none;
-        transition: all 0.2s;
-
-        &:hover {
-          background: #f5f5f5;
-          color: #333;
-        }
+    .details-link {
+      text-decoration: none;
+      color: #007bff;
+      font-weight: 500;
+      font-size: 1.2rem;
+      
+      &:hover {
+        color: #0056b3;
       }
     }
   }
 
   .progress-container {
     background: #f0f0f0;
-    border-radius: 4px;
-    height: 24px;
+    border-radius: 8px;
+    height: 16px;
     overflow: hidden;
     position: relative;
 
     .progress-bar {
-      background: linear-gradient(90deg, #007bff, #0056b3);
+      background: linear-gradient(90deg, #007bff, #00bfff);
       height: 100%;
       transition: width 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
-      min-width: 40px;
+      min-width: 16px;
 
       .progress-label {
         color: white;
-        font-size: 0.9rem;
         font-weight: 500;
+        font-size: 0.75rem;
       }
     }
   }
 
-  .metric-values {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    .current-value, .target-value {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem;
-      background: #f8f9fa;
-      border-radius: 4px;
-
-      .label {
-        color: #666;
-        font-size: 0.9rem;
-      }
-
-      .value {
-        font-weight: 500;
-        color: #333;
-      }
-    }
-  }
-
-  .target-status {
+  .current-value {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
     text-align: center;
-    padding: 0.5rem;
-    border-radius: 4px;
-    background: #ffeeba;
-    color: #856404;
-
-    &.reached {
-      background: #d4edda;
-      color: #155724;
-    }
   }
 }
