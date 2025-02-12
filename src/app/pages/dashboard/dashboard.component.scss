@@ -24,6 +24,48 @@
       grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       gap: 1rem;
       min-height: 200px;
+      padding: 0.5rem;
+      position: relative;
+
+      &.cdk-drop-list-dragging {
+        .widget-item:not(.cdk-drag-dragging) {
+          transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+        }
+      }
+    }
+
+    .widget-item {
+      cursor: move;
+      position: relative;
+      will-change: transform;
+
+      &.large {
+        grid-column: span 2;
+      }
+
+      &.cdk-drag-preview {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+      }
+
+      &.cdk-drag-placeholder {
+        opacity: 0;
+      }
+
+      &.cdk-drag-animating {
+        transition: none !important;
+      }
+    }
+
+    .widget-placeholder {
+      background: #f5f5f5;
+      border: 2px dashed #ccc;
+      border-radius: 8px;
+      min-height: 200px;
+      opacity: 0.6;
+
+      &.large {
+        grid-column: span 2;
+      }
     }
 
     .add-widget-btn {

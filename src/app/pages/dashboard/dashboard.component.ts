@@ -1,19 +1,22 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { DeviceFilterComponent } from '../../components/device-filter/device-filter.component';
 import { MetricWidgetComponent } from '../../components/metric-widget/metric-widget.component';
 import { DashboardStateService } from '../../services/dashboard-state.service';
 import { mockMetricsData } from '../../data/mock-metrics';
+import { WidgetSize } from '../../components/metric-widget/metric-widget.component';
 
 interface WidgetConfig {
   id: number;
   type: 'users' | 'pageViews';
+  size: WidgetSize;
 }
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, DeviceFilterComponent, MetricWidgetComponent],
+  imports: [CommonModule, DeviceFilterComponent, MetricWidgetComponent, DragDropModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -30,7 +33,12 @@ export class DashboardComponent {
     
     this.widgets.push({
       id: this.nextWidgetId++,
-      type
+      type,
+      size: 'small'
     });
+  }
+
+  onDrop(event: CdkDragDrop<WidgetConfig[]>) {
+    moveItemInArray(this.widgets, event.previousIndex, event.currentIndex);
   }
 }

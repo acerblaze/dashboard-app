@@ -1,1 +1,35 @@
 /* You can add global styles to this file, and also import other style files */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+// Drag and drop styles
+.cdk-drag {
+  cursor: move;
+}
+
+.cdk-drag-preview {
+  z-index: 1000;
+}
+
+.cdk-drag-placeholder {
+  opacity: 0;
+}
+
+.cdk-drop-list-dragging .widget-item:not(.cdk-drag-dragging) {
+  transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform;
+}

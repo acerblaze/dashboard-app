@@ -5,12 +5,28 @@
   </header>
 
   <div class="dashboard-content">
-    <div class="widgets-container">
+    <div 
+      class="widgets-container"
+      cdkDropList
+      cdkDropListOrientation="horizontal"
+      [cdkDropListAutoScrollStep]="50"
+      (cdkDropListDropped)="onDrop($event)"
+    >
       @for (widget of widgets; track widget.id) {
         <app-metric-widget
+          cdkDrag
           [metricType]="widget.type"
           [metricData]="metricsData[widget.type]"
-        ></app-metric-widget>
+          [size]="widget.size"
+          class="widget-item"
+        >
+          <!-- Simple placeholder that matches the original size -->
+          <div 
+            *cdkDragPlaceholder 
+            class="widget-placeholder"
+            [class.large]="widget.size === 'large'"
+          ></div>
+        </app-metric-widget>
       }
     </div>
 
