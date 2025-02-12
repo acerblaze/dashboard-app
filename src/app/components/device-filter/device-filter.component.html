@@ -1,0 +1,13 @@
+<div class="device-filter">
+
+  <select 
+    id="deviceType"
+    [ngModel]="selectedDeviceType"
+    (ngModelChange)="onDeviceTypeChange($event)"
+    class="device-select"
+  >
+    @for (type of deviceTypes; track type.value) {
+      <option [value]="type.value">{{ type.label }}</option>
+    }
+  </select>
+</div>

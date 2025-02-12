@@ -1,0 +1,22 @@
+<div class="dashboard">
+  <header class="dashboard-header">
+    <h1>Analytics Dashboard</h1>
+    <app-device-filter></app-device-filter>
+  </header>
+
+  <div class="dashboard-content">
+    <div class="widgets-container">
+      @for (widget of widgets; track widget.id) {
+        <app-metric-widget
+          [metricType]="widget.type"
+          [metricData]="metricsData[widget.type]"
+        ></app-metric-widget>
+      }
+    </div>
+
+    <button class="add-widget-btn" (click)="addWidget()">
+      <span class="icon">+</span>
+      Add Widget
+    </button>
+  </div>
+</div>
