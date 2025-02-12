@@ -1,10 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DashboardStateService, DeviceType } from '../../services/dashboard-state.service';
+import { DashboardStateService, DeviceType, MetricType, WidgetSize } from '../../services/dashboard-state.service';
 import { MetricData } from '../../data/mock-metrics';
-
-export type WidgetSize = 'small' | 'large';
 
 @Component({
   selector: 'app-metric-widget',
@@ -14,9 +12,10 @@ export type WidgetSize = 'small' | 'large';
   styleUrl: './metric-widget.component.scss'
 })
 export class MetricWidgetComponent implements OnInit {
-  @Input() metricType: 'users' | 'pageViews' = 'users';
+  @Input() metricType!: MetricType;
   @Input() metricData!: MetricData;
   @Input() size: WidgetSize = 'small';
+  @Input() id!: number;
 
   currentValue: number = 0;
   progressPercentage: number = 0;
@@ -49,7 +48,8 @@ export class MetricWidgetComponent implements OnInit {
   }
 
   toggleSize(): void {
-    this.size = this.size === 'small' ? 'large' : 'small';
+    const newSize = this.size === 'small' ? 'large' : 'small';
+    this.dashboardState.updateWidgetSize(this.id, newSize);
   }
 
   get metricLabel(): string {

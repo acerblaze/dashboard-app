@@ -11,6 +11,35 @@
       font-size: 2rem;
       color: #333;
     }
+
+    .add-widget-btn {
+      align-self: center;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.2s;
+
+      .icon {
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+
+      &:hover {
+        background-color: #0056b3;
+      }
+
+      &:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+      }
+    }
   }
 
   .dashboard-content {
@@ -66,35 +95,6 @@
       &.large {
         grid-column: span 2;
       }
-    }
-
-    .add-widget-btn {
-      align-self: center;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.75rem 1.5rem;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background-color 0.2s;
-
-      .icon {
-        font-size: 1.5rem;
-        line-height: 1;
-      }
-
-      &:hover {
-        background-color: #0056b3;
-      }
-
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
-      }
-    }
+    }  
   }
 }

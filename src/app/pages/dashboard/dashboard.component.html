@@ -2,6 +2,10 @@
   <header class="dashboard-header">
     <h1>Analytics Dashboard</h1>
     <app-device-filter></app-device-filter>
+    <button class="add-widget-btn" (click)="addWidget()">
+      <span class="icon">+</span>
+      Add Widget
+    </button>
   </header>
 
   <div class="dashboard-content">
@@ -15,6 +19,7 @@
       @for (widget of widgets; track widget.id) {
         <app-metric-widget
           cdkDrag
+          [id]="widget.id"
           [metricType]="widget.type"
           [metricData]="metricsData[widget.type]"
           [size]="widget.size"
@@ -30,9 +35,6 @@
       }
     </div>
 
-    <button class="add-widget-btn" (click)="addWidget()">
-      <span class="icon">+</span>
-      Add Widget
-    </button>
+  
   </div>
 </div>
