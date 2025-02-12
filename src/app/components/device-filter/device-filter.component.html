@@ -1,13 +1,12 @@
 <div class="device-filter">
-
-  <select 
-    id="deviceType"
-    [ngModel]="selectedDeviceType"
-    (ngModelChange)="onDeviceTypeChange($event)"
-    class="device-select"
-  >
+  <button class="device-filter-btn" (click)="toggleDropdown()">
+    {{ selectedDeviceType === 'total' ? 'All Devices' : selectedDeviceType === 'desktop' ? 'Desktop Only' : 'Mobile Only' }}
+  </button>
+  <div class="dropdown-menu" [class.show]="isDropdownOpen">
     @for (type of deviceTypes; track type.value) {
-      <option [value]="type.value">{{ type.label }}</option>
+      <button class="dropdown-item" (click)="onDeviceTypeChange(type.value)">
+        {{ type.label }}
+      </button>
     }
-  </select>
+  </div>
 </div>
