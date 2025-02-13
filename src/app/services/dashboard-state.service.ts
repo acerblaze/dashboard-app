@@ -18,6 +18,9 @@ export class DashboardStateService {
   private deviceTypeSubject = new BehaviorSubject<DeviceType>('total');
   deviceType$ = this.deviceTypeSubject.asObservable();
 
+  private selectedDaySubject = new BehaviorSubject<string>('2025-02-28'); // Default to last day
+  selectedDay$ = this.selectedDaySubject.asObservable();
+
   private widgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
   widgets$ = this.widgetsSubject.asObservable();
 
@@ -31,6 +34,14 @@ export class DashboardStateService {
 
   getCurrentDeviceType(): DeviceType {
     return this.deviceTypeSubject.value;
+  }
+
+  setSelectedDay(date: string): void {
+    this.selectedDaySubject.next(date);
+  }
+
+  getCurrentSelectedDay(): string {
+    return this.selectedDaySubject.value;
   }
 
   addWidget(type: MetricType, initialSize: WidgetSize = 'small'): void {

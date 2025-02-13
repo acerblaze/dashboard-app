@@ -6,6 +6,7 @@ import { MetricWidgetComponent } from '../../components/metric-widget/metric-wid
 import { ExpandedMetricWidgetComponent } from '../../components/expanded-metric-widget/expanded-metric-widget.component';
 import { DashboardStateService, WidgetConfig, MetricType } from '../../services/dashboard-state.service';
 import { mockMetricsData } from '../../data/mock-metrics';
+import { DaySelectorComponent } from '../../components/day-selector/day-selector.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,7 +16,8 @@ import { mockMetricsData } from '../../data/mock-metrics';
     DeviceFilterComponent, 
     MetricWidgetComponent, 
     ExpandedMetricWidgetComponent,
-    DragDropModule
+    DragDropModule,
+    DaySelectorComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'

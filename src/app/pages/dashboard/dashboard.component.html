@@ -1,7 +1,10 @@
 <div class="dashboard">
   <header class="dashboard-header">
     <h1>Analytics Dashboard</h1>
-    <app-device-filter></app-device-filter>
+    <div class="filters">
+      <app-device-filter></app-device-filter>
+      <app-day-selector></app-day-selector>
+    </div>
     <div class="add-widget-dropdown">
       <button class="add-widget-btn" (click)="toggleDropdown()">
         <span class="icon">+</span>
