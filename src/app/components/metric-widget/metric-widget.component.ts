@@ -5,11 +5,20 @@ import { DashboardStateService, MetricType } from '../../services/dashboard-stat
 import { MetricData } from '../../data/mock-metrics';
 import { Subscription, combineLatest } from 'rxjs';
 import { NumberAnimationService } from '../../services/number-animation.service';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 
 @Component({
   selector: 'app-metric-widget',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule
+  ],
   templateUrl: './metric-widget.component.html',
   styleUrl: './metric-widget.component.scss'
 })
@@ -109,5 +118,9 @@ export class MetricWidgetComponent implements OnInit, OnDestroy {
 
   formatNumber(value: number): string {
     return new Intl.NumberFormat('en-US').format(Math.round(value));
+  }
+
+  toggleSize(): void {
+    this.dashboardState.updateWidgetSize(this.id, 'large');
   }
 }

@@ -14,21 +14,23 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1.5rem;
 
     h3 {
       margin: 0;
-      font-size: 24px;
-      color: #333;
+      font-size: 1.25rem;
+      font-weight: 500;
     }
 
     .widget-controls {
-      .details-link {
-        color: #007bff;
-        text-decoration: none;
-        font-weight: 500;
-        transition: transform 0.2s;
+      display: flex;
+      align-items: center;
 
-       
+      .more-options {
+        color: rgba(0, 0, 0, 0.54);
+        &:hover {
+          color: rgba(0, 0, 0, 0.87);
+        }
       }
     }
   }

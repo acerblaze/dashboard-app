@@ -14,20 +14,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 1rem;
 
     h3 {
       margin: 0;
-      font-size: 18px;
-      color: #333;
+      font-size: 1.1rem;
+      font-weight: 500;
     }
 
-    .details-link {
-      color: #007bff;
-      text-decoration: none;
-      font-size: 20px;
-      transition: transform 0.2s;
-
-   
+    .more-options {
+      color: rgba(0, 0, 0, 0.54);
+      &:hover {
+        color: rgba(0, 0, 0, 0.87);
+      }
     }
   }
 

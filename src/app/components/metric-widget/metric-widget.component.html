@@ -2,9 +2,19 @@
   <!-- Header with title -->
   <div class="widget-header">
     <h3>{{ metricLabel }}</h3>
-    <a [routerLink]="['/metric', metricType]" class="details-link">
-      →
-    </a>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="more-options">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu" xPosition="before">
+      <button mat-menu-item [routerLink]="['/metric', metricType]">
+        <mat-icon>analytics</mat-icon>
+        <span>Details</span>
+      </button>
+      <button mat-menu-item (click)="toggleSize()">
+        <mat-icon>open_in_full</mat-icon>
+        <span>Expand Widget</span>
+      </button>
+    </mat-menu>
   </div>
 
   <!-- Progress indicator -->

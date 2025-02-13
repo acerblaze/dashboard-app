@@ -5,11 +5,20 @@ import { DashboardStateService, MetricType } from '../../services/dashboard-stat
 import { MetricData } from '../../data/mock-metrics';
 import { Subscription, combineLatest } from 'rxjs';
 import { NumberAnimationService } from '../../services/number-animation.service';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 
 @Component({
   selector: 'app-expanded-metric-widget',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [
+    CommonModule,
+    RouterLink,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule
+  ],
   templateUrl: './expanded-metric-widget.component.html',
   styleUrl: './expanded-metric-widget.component.scss'
 })
@@ -32,6 +41,10 @@ export class ExpandedMetricWidgetComponent implements OnInit, OnDestroy {
     private dashboardState: DashboardStateService,
     private numberAnimation: NumberAnimationService
   ) {}
+
+  toggleSize(): void {
+    this.dashboardState.updateWidgetSize(this.id, 'small');
+  }
 
   ngOnInit() {
     // Subscribe to both device type and selected day changes

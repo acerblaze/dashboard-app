@@ -6,18 +6,20 @@
       <app-day-selector></app-day-selector>
     </div>
     <div class="add-widget-dropdown">
-      <button class="add-widget-btn" (click)="toggleDropdown()">
-        <span class="icon">+</span>
-        Add Widget
+      <button [matMenuTriggerFor]="addWidgetMenu" class="add-widget-btn">
+        <mat-icon>add</mat-icon>
+        <span>Add Widget</span>
       </button>
-      <div class="dropdown-menu" [class.show]="isDropdownOpen">
-        <button class="dropdown-item" (click)="addWidget('users')">
-          Users Widget
+      <mat-menu #addWidgetMenu="matMenu" xPosition="before">
+        <button mat-menu-item (click)="addWidget('users')">
+          <mat-icon>group</mat-icon>
+          <span>Users Widget</span>
         </button>
-        <button class="dropdown-item" (click)="addWidget('pageViews')">
-          Page Views Widget
+        <button mat-menu-item (click)="addWidget('pageViews')">
+          <mat-icon>analytics</mat-icon>
+          <span>Page Views Widget</span>
         </button>
-      </div>
+      </mat-menu>
     </div>
   </header>
 
@@ -34,7 +36,7 @@
           cdkDrag
           cdkDragHandle
         >
-          <div class="widget-content" (click)="toggleWidgetSize(widget)">
+          <div class="widget-content">
             @if (widget.size === 'small') {
               <app-metric-widget
                 [id]="widget.id"

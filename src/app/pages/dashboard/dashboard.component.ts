@@ -1,6 +1,9 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { DeviceFilterComponent } from '../../components/device-filter/device-filter.component';
 import { MetricWidgetComponent } from '../../components/metric-widget/metric-widget.component';
 import { ExpandedMetricWidgetComponent } from '../../components/expanded-metric-widget/expanded-metric-widget.component';
@@ -17,7 +20,10 @@ import { DaySelectorComponent } from '../../components/day-selector/day-selector
     MetricWidgetComponent, 
     ExpandedMetricWidgetComponent,
     DragDropModule,
-    DaySelectorComponent
+    DaySelectorComponent,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'

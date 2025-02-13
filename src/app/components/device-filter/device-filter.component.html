@@ -1,12 +1,14 @@
 <div class="device-filter">
-  <button class="device-filter-btn" (click)="toggleDropdown()">
-    {{ selectedDeviceType === 'total' ? 'All Devices' : selectedDeviceType === 'desktop' ? 'Desktop Only' : 'Mobile Only' }}
+  <button [matMenuTriggerFor]="menu" class="device-filter-btn">
+    <span>{{ selectedDeviceType === 'total' ? 'All Devices' : selectedDeviceType === 'desktop' ? 'Desktop Only' : 'Mobile Only' }}</span>
+    <mat-icon class="dropdown-icon">expand_more</mat-icon>
   </button>
-  <div class="dropdown-menu" [class.show]="isDropdownOpen">
+  <mat-menu #menu="matMenu" xPosition="before">
     @for (type of deviceTypes; track type.value) {
-      <button class="dropdown-item" (click)="onDeviceTypeChange(type.value)">
-        {{ type.label }}
+      <button mat-menu-item (click)="onDeviceTypeChange(type.value)">
+        <mat-icon>{{ type.value === 'total' ? 'devices' : type.value === 'desktop' ? 'desktop_windows' : 'smartphone' }}</mat-icon>
+        <span>{{ type.label }}</span>
       </button>
     }
-  </div>
+  </mat-menu>
 </div>

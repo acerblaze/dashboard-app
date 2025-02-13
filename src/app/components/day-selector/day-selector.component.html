@@ -1,0 +1,15 @@
+<div class="day-selector">
+  <button [matMenuTriggerFor]="menu" class="day-selector-btn">
+    <span>{{ formatDate(selectedDay) }}</span>
+    <mat-icon class="dropdown-icon">expand_more</mat-icon>
+  </button>
+  <mat-menu #menu="matMenu" xPosition="before" class="day-selector-menu">
+    <div class="menu-items">
+      @for (day of availableDays; track day) {
+        <button mat-menu-item (click)="onDayChange(day)">
+          <span>{{ formatDate(day) }}</span>
+        </button>
+      }
+    </div>
+  </mat-menu>
+</div> 
