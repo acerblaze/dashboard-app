@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export type DeviceType = 'total' | 'desktop' | 'mobile';
 export type MetricType = 'users' | 'pageViews';
@@ -15,14 +16,23 @@ export interface WidgetConfig {
   providedIn: 'root'
 })
 export class DashboardStateService {
-  private deviceTypeSubject = new BehaviorSubject<DeviceType>('total');
-  deviceType$ = this.deviceTypeSubject.asObservable();
+  private readonly deviceTypeSubject = new BehaviorSubject<DeviceType>('total');
+  readonly deviceType$ = this.deviceTypeSubject.asObservable();
 
-  private selectedDaySubject = new BehaviorSubject<string>('2025-02-28'); // Default to last day
-  selectedDay$ = this.selectedDaySubject.asObservable();
+  private readonly selectedDaySubject = new BehaviorSubject<string>('2025-02-28');
+  readonly selectedDay$ = this.selectedDaySubject.asObservable();
 
-  private widgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
-  widgets$ = this.widgetsSubject.asObservable();
+  private readonly widgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
+  readonly widgets$ = this.widgetsSubject.asObservable();
+
+  // Derived observables for specific widget states
+  readonly smallWidgets$ = this.widgets$.pipe(
+    map(widgets => widgets.filter(w => w.size === 'small'))
+  );
+
+  readonly largeWidgets$ = this.widgets$.pipe(
+    map(widgets => widgets.filter(w => w.size === 'large'))
+  );
 
   private nextWidgetId = 1;
 
@@ -44,14 +54,16 @@ export class DashboardStateService {
     return this.selectedDaySubject.value;
   }
 
-  addWidget(type: MetricType, initialSize: WidgetSize = 'small'): void {
+  addWidget(type: MetricType, initialSize: WidgetSize = 'small'): number {
+    const newId = this.nextWidgetId++;
     const widgets = this.widgetsSubject.value;
     widgets.push({
-      id: this.nextWidgetId++,
+      id: newId,
       type,
       size: initialSize
     });
     this.widgetsSubject.next(widgets);
+    return newId;
   }
 
   updateWidgetSize(widgetId: number, size: WidgetSize): void {
@@ -64,10 +76,28 @@ export class DashboardStateService {
   }
 
   updateWidgetsOrder(widgets: WidgetConfig[]): void {
+    // Validate that we're not losing any widgets
+    if (widgets.length !== this.widgetsSubject.value.length) {
+      console.error('Invalid widget order update: widget count mismatch');
+      return;
+    }
     this.widgetsSubject.next([...widgets]);
   }
 
   getWidgets(): WidgetConfig[] {
-    return this.widgetsSubject.value;
+    return [...this.widgetsSubject.value];
+  }
+
+  getWidget(id: number): WidgetConfig | undefined {
+    return this.widgetsSubject.value.find(w => w.id === id);
+  }
+
+  removeWidget(id: number): void {
+    const widgets = this.widgetsSubject.value;
+    const index = widgets.findIndex(w => w.id === id);
+    if (index !== -1) {
+      widgets.splice(index, 1);
+      this.widgetsSubject.next([...widgets]);
+    }
   }
 }
