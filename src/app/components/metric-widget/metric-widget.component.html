@@ -18,6 +18,11 @@
 
   <!-- Current value -->
   <div class="current-value">
-    {{ currentValue | number }}
+    {{ formatNumber(displayValue) }}
+  </div>
+
+  <!-- Cumulative value -->
+  <div class="cumulative-value">
+    Total: {{ formatNumber(displayCumulativeValue) }}
   </div>
 </div>

@@ -21,12 +21,16 @@
   <!-- Metric values -->
   <div class="metric-values">
     <div class="current-value">
-      <span class="label">Current Value:</span>
-      <span class="value">{{ currentValue | number }}</span>
+      <span class="label">Today's Value:</span>
+      <span class="value">{{ formatNumber(displayValue) }}</span>
+    </div>
+    <div class="cumulative-value">
+      <span class="label">Total So Far:</span>
+      <span class="value">{{ formatNumber(displayCumulativeValue) }}</span>
     </div>
     <div class="target-value">
       <span class="label">Monthly Target:</span>
-      <span class="value">{{ metricData.monthlyTarget | number }}</span>
+      <span class="value">{{ formatNumber(metricData.monthlyTarget) }}</span>
     </div>
   </div>
 

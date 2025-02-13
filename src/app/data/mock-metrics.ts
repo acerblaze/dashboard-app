@@ -18,7 +18,7 @@ export interface Metrics {
 export const mockMetricsData: Metrics = {
   // Data for the "users" metric
   users: {
-    monthlyTarget: 10000, // Monthly goal is 10,000 users
+    monthlyTarget: 10000, // Monthly goal is 10 000 users
     dailyData: [
       { date: "2025-02-01", total: 347, desktop: 228, mobile: 119 },
       { date: "2025-02-02", total: 392, desktop: 251, mobile: 141 },
@@ -53,7 +53,7 @@ export const mockMetricsData: Metrics = {
   
   // Data for the "pageViews" metric
   pageViews: {
-    monthlyTarget: 50000, // Monthly goal is 50,000 page views
+    monthlyTarget: 100000, // Monthly goal is 100 000 page views
     dailyData: [
       { date: "2025-02-01", total: 3847, desktop: 2389, mobile: 1458 },
       { date: "2025-02-02", total: 4123, desktop: 2578, mobile: 1545 },
