@@ -3,53 +3,67 @@
   <div class="widget-header">
     <h3>{{ metricLabel }}</h3>
     <div class="widget-controls">
-      <button mat-icon-button [matMenuTriggerFor]="menu" class="more-options">
-        <mat-icon>more_vert</mat-icon>
+      <button class="icon-button" (click)="toggleMenu()" aria-label="More options">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
+        </svg>
       </button>
-      <mat-menu #menu="matMenu" xPosition="before">
-        <button mat-menu-item [routerLink]="['/metric', metricType]">
-          <mat-icon>analytics</mat-icon>
-          <span>Details</span>
+      <!-- Dropdown Menu -->
+      <div class="dropdown-menu" [class.show]="showMenu">
+        <a [routerLink]="['/metric', metricType]" class="dropdown-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+          </svg>
+          Details
+        </a>
+        <button class="dropdown-item" (click)="toggleSize()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
+            <path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
+          </svg>
+          Collapse Widget
         </button>
-        <button mat-menu-item (click)="toggleSize()">
-          <mat-icon>close_fullscreen</mat-icon>
-          <span>Collapse Widget</span>
+        <button class="dropdown-item" (click)="toggleMetricType()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/><circle cx="12" cy="10" r="3"/><circle cx="12" cy="12" r="10"/>
+          </svg>
+          Show {{ metricType === 'users' ? 'Page Views' : 'Users' }}
         </button>
-        <button mat-menu-item (click)="toggleMetricType()">
-          <mat-icon>{{ metricType === 'users' ? 'visibility' : 'group' }}</mat-icon>
-          <span>Show {{ metricType === 'users' ? 'Page Views' : 'Users' }}</span>
-        </button>
-      </mat-menu>
-    </div>
-  </div>
-
-  <!-- Progress indicator -->
-  <div class="progress-container">
-    <div class="progress-bar" [style.width.%]="progressPercentage">
-      <div class="progress-label">
-        {{ progressPercentage | number:'1.0-0' }}%
       </div>
     </div>
   </div>
 
-  <!-- Metric values -->
-  <div class="metric-values">
-    <div class="current-value">
-      <span class="label">Today's Value:</span>
-      <span class="value">{{ formatNumber(displayValue) }}</span>
+  <!-- Progress Section -->
+  <div class="progress-section">
+    <div class="progress-header">
+      <span class="progress-label">Monthly Progress</span>
+      <span class="progress-percentage">{{ progressPercentage | number:'1.0-0' }}%</span>
     </div>
-    <div class="cumulative-value">
-      <span class="label">Total So Far:</span>
-      <span class="value">{{ formatNumber(displayCumulativeValue) }}</span>
-    </div>
-    <div class="target-value">
-      <span class="label">Monthly Target:</span>
-      <span class="value">{{ formatNumber(getMonthlyTarget()) }}</span>
+  <div class="progress-container">
+      <div class="progress-bar" [style.width.%]="progressPercentage" [class.reached]="isTargetReached"></div>
     </div>
   </div>
 
-  <!-- Target status -->
-  <div class="target-status" [class.reached]="isTargetReached">
-    {{ isTargetReached ? 'Target Reached! 🎉' : 'Target Not Yet Reached' }}
+  <!-- Metrics Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <span class="metric-label">Today's Value</span>
+      <span class="metric-value">{{ formatNumber(displayValue) }}</span>
+    </div>
+    <div class="metric-card highlight">
+      <span class="metric-label">Monthly Total</span>
+      <span class="metric-value">{{ formatNumber(displayCumulativeValue) }}</span>
+    </div>
+    <div class="metric-card" [class.target-reached]="isTargetReached">
+      <span class="metric-label">{{ isTargetReached ? 'Target Reached!' : 'Target' }}</span>
+      <span class="metric-value">{{ formatNumber(getMonthlyTarget()) }}</span>
+    </div>
+  </div>
+
+  <!-- Trend Chart -->
+  <div class="trend-chart-container">
+    <h4>Trend</h4>
+    <canvas #trendChart></canvas>
   </div>
 </div>
+

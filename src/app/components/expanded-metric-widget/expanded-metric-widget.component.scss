@@ -1,113 +1,221 @@
 .expanded-metric-widget {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  background: hsl(0 0% 100%);
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   height: 100%;
+  max-height: 600px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 1.5rem;
   grid-column: span 2;
   grid-row: span 2;
+  position: relative;
+  overflow: hidden;
 
   .widget-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
 
     h3 {
       margin: 0;
       font-size: 1.25rem;
-      font-weight: 500;
+      font-weight: 600;
+      color: hsl(240 5.9% 10%);
     }
 
     .widget-controls {
-      display: flex;
-      align-items: center;
+      position: relative;
 
-      .more-options {
-        color: rgba(0, 0, 0, 0.54);
+      .icon-button {
+        background: none;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        color: hsl(240 3.8% 46.1%);
+        cursor: pointer;
+        transition: all 0.15s;
+
         &:hover {
-          color: rgba(0, 0, 0, 0.87);
+          background: hsl(240 5.9% 96%);
+          color: hsl(240 5.9% 10%);
+        }
+      }
+
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        right: 0;
+        top: 100%;
+        margin-top: 0.5rem;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        padding: 0.5rem;
+        min-width: 12rem;
+        z-index: 50;
+
+        &.show {
+          display: block;
+        }
+
+        .dropdown-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          width: 100%;
+          padding: 0.5rem;
+          border: none;
+          background: none;
+          color: hsl(240 3.8% 46.1%);
+          font-size: 0.875rem;
+          border-radius: 0.25rem;
+          cursor: pointer;
+          text-decoration: none;
+
+          svg {
+            color: hsl(240 3.8% 46.1%);
+          }
+
+          &:hover {
+            background: hsl(240 5.9% 96%);
+            color: hsl(240 5.9% 10%);
+
+            svg {
+              color: hsl(240 5.9% 10%);
+            }
+          }
         }
       }
     }
   }
 
-  .progress-container {
-    background: #f0f0f0;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 32px;
-    position: relative;
-
-    .progress-bar {
-      background: linear-gradient(90deg, #007bff, #0056b3);
-      height: 100%;
-      transition: width 0.75s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
+  .progress-section {
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
 
       .progress-label {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: white;
-        font-size: 14px;
+        font-size: 0.875rem;
+        color: hsl(240 3.8% 46.1%);
+      }
+
+      .progress-percentage {
+        font-size: 0.875rem;
         font-weight: 500;
+        color: hsl(240 5.9% 10%);
+      }
+    }
+
+    .progress-container {
+      background: hsl(240 5.9% 96%);
+      border-radius: 9999px;
+      overflow: hidden;
+      height: 0.75rem;
+
+      .progress-bar {
+        background: hsl(142.1 76.2% 36.3%);
+        height: 100%;
+        transition: width 0.75s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &.reached {
+          background: hsl(142.1 76.2% 36.3%);
+        }
       }
     }
   }
 
-  .metric-values {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
 
-    .current-value,
-    .cumulative-value,
-    .target-value {
+    .metric-card {
+      background: hsl(240 5.9% 96%);
+      padding: 1rem;
+      border-radius: 0.5rem;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px;
-      background: #f8f9fa;
-      border-radius: 8px;
+      flex-direction: column;
+      gap: 0.25rem;
 
-      .label {
-        color: #666;
-        font-size: 14px;
+      &.highlight {
+        background: hsl(217.2 91.2% 59.8% / 0.1);
+
+        .metric-value {
+          color: hsl(217.2 91.2% 59.8%);
+        }
       }
 
-      .value {
-        font-size: 20px;
+      &.target-reached {
+        background: hsl(142.1 76.2% 36.3% / 0.1);
+
+        .metric-label, .metric-value {
+          color: hsl(142.1 76.2% 36.3%);
+        }
+      }
+
+      .metric-label {
+        font-size: 0.875rem;
+        color: hsl(240 3.8% 46.1%);
+      }
+
+      .metric-value {
+        font-size: 1.25rem;
         font-weight: 600;
-        color: #333;
+        color: hsl(240 5.9% 10%);
       }
     }
+  }
 
-    .cumulative-value {
-      background: #e3f2fd;
-      
-      .value {
-        color: #0056b3;
-      }
+  .trend-chart-container {
+    flex: 1;
+    min-height: 180px;
+    max-height: 200px;
+    padding: 1rem;
+    background: hsl(240 5.9% 96%);
+    border-radius: 0.5rem;
+    position: relative;
+    overflow: hidden;
+
+    h4 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: hsl(240 3.8% 46.1%);
+    }
+
+    canvas {
+      width: 100% !important;
+      height: calc(100% - 1.5rem) !important;
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      padding: 0.5rem;
     }
   }
 
   .target-status {
-    margin-top: auto;
-    text-align: center;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: hsl(240 5.9% 96%);
+    border-radius: 0.5rem;
+    color: hsl(240 3.8% 46.1%);
+    font-size: 0.875rem;
     font-weight: 500;
 
     &.reached {
-      background: #d4edda;
-      color: #155724;
+      background: hsl(142.1 76.2% 36.3% / 0.1);
+      color: hsl(142.1 76.2% 36.3%);
+
+      svg {
+        color: hsl(142.1 76.2% 36.3%);
+      }
     }
   }
 }
