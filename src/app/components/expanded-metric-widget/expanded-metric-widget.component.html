@@ -15,6 +15,10 @@
           <mat-icon>close_fullscreen</mat-icon>
           <span>Collapse Widget</span>
         </button>
+        <button mat-menu-item (click)="toggleMetricType()">
+          <mat-icon>{{ metricType === 'users' ? 'visibility' : 'group' }}</mat-icon>
+          <span>Show {{ metricType === 'users' ? 'Page Views' : 'Users' }}</span>
+        </button>
       </mat-menu>
     </div>
   </div>
@@ -40,7 +44,7 @@
     </div>
     <div class="target-value">
       <span class="label">Monthly Target:</span>
-      <span class="value">{{ formatNumber(metricData.monthlyTarget) }}</span>
+      <span class="value">{{ formatNumber(getMonthlyTarget()) }}</span>
     </div>
   </div>
 

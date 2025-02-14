@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DashboardStateService } from '../../services/dashboard-state.service';
+import { DashboardStateService, MetricType } from '../../services/dashboard-state.service';
 import { NumberAnimationService } from '../../services/number-animation.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';

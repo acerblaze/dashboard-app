@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { DashboardStateService } from '../../services/dashboard-state.service';
+import { DashboardStateService, MetricType } from '../../services/dashboard-state.service';
 import { NumberAnimationService } from '../../services/number-animation.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -38,5 +38,11 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget {
 
   toggleSize(): void {
     this.dashboardState.updateWidgetSize(this.id, 'small');
+  }
+
+  getMonthlyTarget(): number {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return 0;
+    return this.dashboardState.getMetricData(widget.type).monthlyTarget;
   }
 }

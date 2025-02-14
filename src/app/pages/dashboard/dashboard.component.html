@@ -41,13 +41,11 @@
               <app-metric-widget
                 [id]="widget.id"
                 [metricType]="widget.type"
-                [metricData]="metricsData[widget.type]"
               ></app-metric-widget>
             } @else {
               <app-expanded-metric-widget
                 [id]="widget.id"
                 [metricType]="widget.type"
-                [metricData]="metricsData[widget.type]"
               ></app-expanded-metric-widget>
             }
           </div>

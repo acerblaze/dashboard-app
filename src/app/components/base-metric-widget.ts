@@ -7,7 +7,6 @@ import { NumberAnimationService } from '../services/number-animation.service';
 @Directive()
 export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   @Input() metricType!: MetricType;
-  @Input() metricData!: MetricData;
   @Input() id!: number;
 
   currentValue: number = 0;
@@ -29,7 +28,8 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
     this.subscriptions.add(
       combineLatest([
         this.dashboardState.deviceType$,
-        this.dashboardState.selectedDay$
+        this.dashboardState.selectedDay$,
+        this.dashboardState.widgets$
       ]).subscribe(() => {
         this.calculateMetrics();
       })
@@ -43,8 +43,11 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   protected calculateMetrics(): void {
     const deviceType = this.dashboardState.getCurrentDeviceType();
     const selectedDay = this.dashboardState.getCurrentSelectedDay();
-    
-    const dayData = this.metricData.dailyData.find(d => d.date === selectedDay);
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const dayData = metricData.dailyData.find(d => d.date === selectedDay);
     
     if (!dayData) {
       console.warn(`No data found for day: ${selectedDay}`);
@@ -57,7 +60,7 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
         ? dayData.desktop 
         : dayData.mobile;
 
-    const newCumulativeValue = this.metricData.dailyData
+    const newCumulativeValue = metricData.dailyData
       .filter(d => d.date <= selectedDay)
       .reduce((sum, day) => {
         const dayValue = deviceType === 'total'
@@ -102,7 +105,7 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
     this.lastCumulativeValue = newCumulativeValue;
 
     // Animate progress percentage
-    const newProgressPercentage = (this.cumulativeValue / this.metricData.monthlyTarget) * 100;
+    const newProgressPercentage = (this.cumulativeValue / metricData.monthlyTarget) * 100;
     this.numberAnimation.animatePercentage(
       this.progressPercentage,
       newProgressPercentage,
@@ -112,7 +115,8 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   }
 
   get metricLabel(): string {
-    return this.metricType === 'users' ? 'Users' : 'Page Views';
+    const widget = this.dashboardState.getWidget(this.id);
+    return widget?.type === 'users' ? 'Users' : 'Page Views';
   }
 
   formatNumber(value: number): string {
@@ -124,4 +128,12 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   }
 
   abstract toggleSize(): void;
+
+  toggleMetricType(): void {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+    
+    const newType = widget.type === 'users' ? 'pageViews' : 'users';
+    this.dashboardState.updateWidgetType(this.id, newType);
+  }
 } 

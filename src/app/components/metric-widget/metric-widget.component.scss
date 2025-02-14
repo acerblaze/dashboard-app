@@ -68,3 +68,26 @@
     margin-top: 4px;
   }
 }
+
+::ng-deep {
+  .menu-separator {
+    height: 1px;
+    background-color: hsl(240 5.9% 90%);
+    margin: 4px 0;
+  }
+
+  .mat-mdc-menu-item {
+    &.active {
+      background-color: hsl(240 5.9% 96%);
+      color: hsl(240 5.9% 10%);
+    }
+
+    &:hover {
+      background-color: hsl(0 0% 98%);
+    }
+
+    .mat-icon {
+      color: hsl(240 3.8% 46.1%);
+    }
+  }
+}

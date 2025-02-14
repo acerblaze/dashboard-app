@@ -1,6 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { mockMetricsData } from '../data/mock-metrics';
+import { MetricData } from '../data/mock-metrics';
 
 export type DeviceType = 'total' | 'desktop' | 'mobile';
 export type MetricType = 'users' | 'pageViews';
@@ -24,6 +26,9 @@ export class DashboardStateService {
 
   private readonly widgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
   readonly widgets$ = this.widgetsSubject.asObservable();
+
+  // Store metric data
+  private readonly metricsData = mockMetricsData;
 
   // Derived observables for specific widget states
   readonly smallWidgets$ = this.widgets$.pipe(
@@ -52,6 +57,10 @@ export class DashboardStateService {
 
   getCurrentSelectedDay(): string {
     return this.selectedDaySubject.value;
+  }
+
+  getMetricData(type: MetricType): MetricData {
+    return this.metricsData[type];
   }
 
   addWidget(type: MetricType, initialSize: WidgetSize = 'small'): number {
@@ -97,6 +106,15 @@ export class DashboardStateService {
     const index = widgets.findIndex(w => w.id === id);
     if (index !== -1) {
       widgets.splice(index, 1);
+      this.widgetsSubject.next([...widgets]);
+    }
+  }
+
+  updateWidgetType(widgetId: number, type: MetricType): void {
+    const widgets = this.widgetsSubject.value;
+    const widget = widgets.find(w => w.id === widgetId);
+    if (widget) {
+      widget.type = type;
       this.widgetsSubject.next([...widgets]);
     }
   }

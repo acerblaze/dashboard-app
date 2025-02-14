@@ -14,6 +14,10 @@
         <mat-icon>open_in_full</mat-icon>
         <span>Expand Widget</span>
       </button>
+      <button mat-menu-item (click)="toggleMetricType()">
+        <mat-icon>{{ metricType === 'users' ? 'visibility' : 'group' }}</mat-icon>
+        <span>Show {{ metricType === 'users' ? 'Page Views' : 'Users' }}</span>
+      </button>
     </mat-menu>
   </div>
 
