@@ -11,7 +11,6 @@ export type WidgetSize = 'small' | 'large';
 export interface WidgetConfig {
   id: number;
   type: MetricType;
-  size: WidgetSize;
 }
 
 @Injectable({
@@ -24,20 +23,14 @@ export class DashboardStateService {
   private readonly selectedDaySubject = new BehaviorSubject<string>('2025-02-28');
   readonly selectedDay$ = this.selectedDaySubject.asObservable();
 
-  private readonly widgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
-  readonly widgets$ = this.widgetsSubject.asObservable();
+  private readonly regularWidgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
+  readonly regularWidgets$ = this.regularWidgetsSubject.asObservable();
+
+  private readonly expandedWidgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
+  readonly expandedWidgets$ = this.expandedWidgetsSubject.asObservable();
 
   // Store metric data
   private readonly metricsData = mockMetricsData;
-
-  // Derived observables for specific widget states
-  readonly smallWidgets$ = this.widgets$.pipe(
-    map(widgets => widgets.filter(w => w.size === 'small'))
-  );
-
-  readonly largeWidgets$ = this.widgets$.pipe(
-    map(widgets => widgets.filter(w => w.size === 'large'))
-  );
 
   private nextWidgetId = 1;
 
@@ -63,59 +56,112 @@ export class DashboardStateService {
     return this.metricsData[type];
   }
 
-  addWidget(type: MetricType, initialSize: WidgetSize = 'small'): number {
+  addRegularWidget(type: MetricType): number {
     const newId = this.nextWidgetId++;
-    const widgets = this.widgetsSubject.value;
+    const widgets = this.regularWidgetsSubject.value;
     widgets.push({
       id: newId,
-      type,
-      size: initialSize
+      type
     });
-    this.widgetsSubject.next(widgets);
+    this.regularWidgetsSubject.next(widgets);
     return newId;
   }
 
-  updateWidgetSize(widgetId: number, size: WidgetSize): void {
-    const widgets = this.widgetsSubject.value;
-    const widget = widgets.find(w => w.id === widgetId);
-    if (widget) {
-      widget.size = size;
-      this.widgetsSubject.next([...widgets]);
-    }
+  addExpandedWidget(type: MetricType): number {
+    const newId = this.nextWidgetId++;
+    const widgets = this.expandedWidgetsSubject.value;
+    widgets.push({
+      id: newId,
+      type
+    });
+    this.expandedWidgetsSubject.next(widgets);
+    return newId;
   }
 
-  updateWidgetsOrder(widgets: WidgetConfig[]): void {
-    // Validate that we're not losing any widgets
-    if (widgets.length !== this.widgetsSubject.value.length) {
+  updateRegularWidgetsOrder(widgets: WidgetConfig[]): void {
+    if (widgets.length !== this.regularWidgetsSubject.value.length) {
       console.error('Invalid widget order update: widget count mismatch');
       return;
     }
-    this.widgetsSubject.next([...widgets]);
+    this.regularWidgetsSubject.next([...widgets]);
   }
 
-  getWidgets(): WidgetConfig[] {
-    return [...this.widgetsSubject.value];
+  updateExpandedWidgetsOrder(widgets: WidgetConfig[]): void {
+    if (widgets.length !== this.expandedWidgetsSubject.value.length) {
+      console.error('Invalid widget order update: widget count mismatch');
+      return;
+    }
+    this.expandedWidgetsSubject.next([...widgets]);
+  }
+
+  getRegularWidgets(): WidgetConfig[] {
+    return [...this.regularWidgetsSubject.value];
+  }
+
+  getExpandedWidgets(): WidgetConfig[] {
+    return [...this.expandedWidgetsSubject.value];
   }
 
   getWidget(id: number): WidgetConfig | undefined {
-    return this.widgetsSubject.value.find(w => w.id === id);
+    return [...this.regularWidgetsSubject.value, ...this.expandedWidgetsSubject.value]
+      .find(w => w.id === id);
   }
 
-  removeWidget(id: number): void {
-    const widgets = this.widgetsSubject.value;
+  removeRegularWidget(id: number): void {
+    const widgets = this.regularWidgetsSubject.value;
     const index = widgets.findIndex(w => w.id === id);
     if (index !== -1) {
       widgets.splice(index, 1);
-      this.widgetsSubject.next([...widgets]);
+      this.regularWidgetsSubject.next([...widgets]);
+    }
+  }
+
+  removeExpandedWidget(id: number): void {
+    const widgets = this.expandedWidgetsSubject.value;
+    const index = widgets.findIndex(w => w.id === id);
+    if (index !== -1) {
+      widgets.splice(index, 1);
+      this.expandedWidgetsSubject.next([...widgets]);
     }
   }
 
   updateWidgetType(widgetId: number, type: MetricType): void {
-    const widgets = this.widgetsSubject.value;
-    const widget = widgets.find(w => w.id === widgetId);
-    if (widget) {
-      widget.type = type;
-      this.widgetsSubject.next([...widgets]);
+    // Check in regular widgets first
+    const regularWidgets = this.regularWidgetsSubject.value;
+    const regularWidget = regularWidgets.find(w => w.id === widgetId);
+    if (regularWidget) {
+      regularWidget.type = type;
+      this.regularWidgetsSubject.next([...regularWidgets]);
+      return;
+    }
+
+    // If not found in regular widgets, check expanded widgets
+    const expandedWidgets = this.expandedWidgetsSubject.value;
+    const expandedWidget = expandedWidgets.find(w => w.id === widgetId);
+    if (expandedWidget) {
+      expandedWidget.type = type;
+      this.expandedWidgetsSubject.next([...expandedWidgets]);
+    }
+  }
+
+  toggleWidgetSize(widgetId: number): void {
+    // Check if it's a regular widget
+    const regularWidgets = this.regularWidgetsSubject.value;
+    const regularWidget = regularWidgets.find(w => w.id === widgetId);
+    if (regularWidget) {
+      // Move from regular to expanded
+      this.removeRegularWidget(widgetId);
+      this.addExpandedWidget(regularWidget.type);
+      return;
+    }
+
+    // Check if it's an expanded widget
+    const expandedWidgets = this.expandedWidgetsSubject.value;
+    const expandedWidget = expandedWidgets.find(w => w.id === widgetId);
+    if (expandedWidget) {
+      // Move from expanded to regular
+      this.removeExpandedWidget(widgetId);
+      this.addRegularWidget(expandedWidget.type);
     }
   }
 }

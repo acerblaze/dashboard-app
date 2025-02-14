@@ -11,11 +11,33 @@
         <span>Add Widget</span>
       </button>
       <mat-menu #addWidgetMenu="matMenu" xPosition="before">
-        <button mat-menu-item (click)="addWidget('users')">
+        <button mat-menu-item [matMenuTriggerFor]="regularWidgetMenu">
+          <mat-icon>widgets</mat-icon>
+          <span>Regular Widget</span>
+        </button>
+        <button mat-menu-item [matMenuTriggerFor]="expandedWidgetMenu">
+          <mat-icon>dashboard</mat-icon>
+          <span>Expanded Widget</span>
+        </button>
+      </mat-menu>
+
+      <mat-menu #regularWidgetMenu="matMenu">
+        <button mat-menu-item (click)="addRegularWidget('users')">
           <mat-icon>group</mat-icon>
           <span>Users Widget</span>
         </button>
-        <button mat-menu-item (click)="addWidget('pageViews')">
+        <button mat-menu-item (click)="addRegularWidget('pageViews')">
+          <mat-icon>analytics</mat-icon>
+          <span>Page Views Widget</span>
+        </button>
+      </mat-menu>
+
+      <mat-menu #expandedWidgetMenu="matMenu">
+        <button mat-menu-item (click)="addExpandedWidget('users')">
+          <mat-icon>group</mat-icon>
+          <span>Users Widget</span>
+        </button>
+        <button mat-menu-item (click)="addExpandedWidget('pageViews')">
           <mat-icon>analytics</mat-icon>
           <span>Page Views Widget</span>
         </button>
@@ -24,30 +46,45 @@
   </header>
 
   <div class="dashboard-content">
+    <!-- Regular Widgets Grid -->
     <div 
-      class="widgets-container"
+      class="regular-widgets-container"
       cdkDropList
-      (cdkDropListDropped)="onDrop($event)"
+      (cdkDropListDropped)="onRegularWidgetDrop($event)"
     >
-      @for (widget of widgets; track widget.id) {
+      @for (widget of regularWidgets; track widget.id) {
         <div 
           class="widget-wrapper"
-          [class.large]="widget.size === 'large'"
           cdkDrag
           cdkDragHandle
         >
           <div class="widget-content">
-            @if (widget.size === 'small') {
-              <app-metric-widget
-                [id]="widget.id"
-                [metricType]="widget.type"
-              ></app-metric-widget>
-            } @else {
-              <app-expanded-metric-widget
-                [id]="widget.id"
-                [metricType]="widget.type"
-              ></app-expanded-metric-widget>
-            }
+            <app-metric-widget
+              [id]="widget.id"
+              [metricType]="widget.type"
+            ></app-metric-widget>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- Expanded Widgets Grid -->
+    <div 
+      class="expanded-widgets-container"
+      cdkDropList
+      (cdkDropListDropped)="onExpandedWidgetDrop($event)"
+    >
+      @for (widget of expandedWidgets; track widget.id) {
+        <div 
+          class="widget-wrapper"
+          cdkDrag
+          cdkDragHandle
+        >
+          <div class="widget-content">
+            <app-expanded-metric-widget
+              [id]="widget.id"
+              [metricType]="widget.type"
+            ></app-expanded-metric-widget>
           </div>
         </div>
       }

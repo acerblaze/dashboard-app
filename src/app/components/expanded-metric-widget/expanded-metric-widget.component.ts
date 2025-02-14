@@ -5,6 +5,7 @@ import { DashboardStateService, MetricType } from '../../services/dashboard-stat
 import { NumberAnimationService } from '../../services/number-animation.service';
 import { BaseMetricWidget } from '../base-metric-widget';
 import { Chart, ChartConfiguration } from 'chart.js';
+import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-expanded-metric-widget',
@@ -31,25 +32,16 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
 
   override ngOnInit() {
     super.ngOnInit();
-    // Subscribe to day changes
+    
+    // Combine all subscriptions that affect chart data
     this.subscriptions.add(
-      this.dashboardState.selectedDay$.subscribe(() => {
+      combineLatest([
+        this.dashboardState.selectedDay$,
+        this.dashboardState.deviceType$,
+        this.dashboardState.expandedWidgets$
+      ]).subscribe(() => {
         this.updateChartData();
-      })
-    );
-
-    // Subscribe to device type changes
-    this.subscriptions.add(
-      this.dashboardState.deviceType$.subscribe(() => {
-        this.updateChartData();
-      })
-    );
-
-    // Subscribe to metric type changes
-    this.subscriptions.add(
-      this.dashboardState.widgets$.subscribe(() => {
-        this.updateChartData();
-        // Also update the dataset label
+        // Update the dataset label
         if (this.chart) {
           this.chart.data.datasets[0].label = this.metricLabel;
         }
@@ -223,10 +215,6 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     this.chart.update('active');
   }
 
-  toggleSize(): void {
-    this.dashboardState.updateWidgetSize(this.id, 'small');
-  }
-
   getMonthlyTarget(): number {
     const widget = this.dashboardState.getWidget(this.id);
     if (!widget) return 0;
@@ -246,5 +234,10 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
       this.dashboardState.updateWidgetType(this.id, newType);
       this.showMenu = false;
     }
+  }
+
+  toggleSize(): void {
+    this.dashboardState.toggleWidgetSize(this.id);
+    this.showMenu = false;
   }
 }

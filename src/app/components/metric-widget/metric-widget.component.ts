@@ -22,6 +22,8 @@ import { BaseMetricWidget } from '../base-metric-widget';
   styleUrl: './metric-widget.component.scss'
 })
 export class MetricWidgetComponent extends BaseMetricWidget {
+  showMenu = false;
+
   constructor(
     dashboardState: DashboardStateService,
     numberAnimation: NumberAnimationService
@@ -29,7 +31,8 @@ export class MetricWidgetComponent extends BaseMetricWidget {
     super(dashboardState, numberAnimation);
   }
 
-  toggleSize(): void {
-    this.dashboardState.updateWidgetSize(this.id, 'large');
+  override toggleSize(): void {
+    this.dashboardState.toggleWidgetSize(this.id);
+    this.showMenu = false;
   }
 }

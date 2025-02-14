@@ -29,7 +29,8 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
       combineLatest([
         this.dashboardState.deviceType$,
         this.dashboardState.selectedDay$,
-        this.dashboardState.widgets$
+        this.dashboardState.regularWidgets$,
+        this.dashboardState.expandedWidgets$
       ]).subscribe(() => {
         this.calculateMetrics();
       })

@@ -29,7 +29,8 @@ import { DaySelectorComponent } from '../../components/day-selector/day-selector
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent implements OnInit {
-  widgets: WidgetConfig[] = [];
+  regularWidgets: WidgetConfig[] = [];
+  expandedWidgets: WidgetConfig[] = [];
   metricsData = mockMetricsData;
   isDropdownOpen = false;
 
@@ -37,11 +38,16 @@ export class DashboardComponent implements OnInit {
 
   ngOnInit() {
     // Initialize widgets from state service
-    this.widgets = this.dashboardState.getWidgets();
+    this.regularWidgets = this.dashboardState.getRegularWidgets();
+    this.expandedWidgets = this.dashboardState.getExpandedWidgets();
     
     // Subscribe to widget changes
-    this.dashboardState.widgets$.subscribe(widgets => {
-      this.widgets = widgets;
+    this.dashboardState.regularWidgets$.subscribe(widgets => {
+      this.regularWidgets = widgets;
+    });
+
+    this.dashboardState.expandedWidgets$.subscribe(widgets => {
+      this.expandedWidgets = widgets;
     });
   }
 
@@ -57,18 +63,23 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  addWidget(type: MetricType): void {
-    this.dashboardState.addWidget(type, 'large');
+  addRegularWidget(type: MetricType): void {
+    this.dashboardState.addRegularWidget(type);
     this.isDropdownOpen = false;
   }
 
-  onDrop(event: CdkDragDrop<WidgetConfig[]>) {
-    moveItemInArray(this.widgets, event.previousIndex, event.currentIndex);
-    this.dashboardState.updateWidgetsOrder(this.widgets);
+  addExpandedWidget(type: MetricType): void {
+    this.dashboardState.addExpandedWidget(type);
+    this.isDropdownOpen = false;
   }
 
-  toggleWidgetSize(widget: WidgetConfig): void {
-    const newSize = widget.size === 'small' ? 'large' : 'small';
-    this.dashboardState.updateWidgetSize(widget.id, newSize);
+  onRegularWidgetDrop(event: CdkDragDrop<WidgetConfig[]>) {
+    moveItemInArray(this.regularWidgets, event.previousIndex, event.currentIndex);
+    this.dashboardState.updateRegularWidgetsOrder(this.regularWidgets);
+  }
+
+  onExpandedWidgetDrop(event: CdkDragDrop<WidgetConfig[]>) {
+    moveItemInArray(this.expandedWidgets, event.previousIndex, event.currentIndex);
+    this.dashboardState.updateExpandedWidgetsOrder(this.expandedWidgets);
   }
 }
