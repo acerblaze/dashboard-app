@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -73,13 +73,33 @@ export class DashboardComponent implements OnInit {
     this.isDropdownOpen = false;
   }
 
-  onRegularWidgetDrop(event: CdkDragDrop<WidgetConfig[]>) {
-    moveItemInArray(this.regularWidgets, event.previousIndex, event.currentIndex);
-    this.dashboardState.updateRegularWidgetsOrder(this.regularWidgets);
-  }
-
-  onExpandedWidgetDrop(event: CdkDragDrop<WidgetConfig[]>) {
-    moveItemInArray(this.expandedWidgets, event.previousIndex, event.currentIndex);
-    this.dashboardState.updateExpandedWidgetsOrder(this.expandedWidgets);
+  onDrop(event: CdkDragDrop<WidgetConfig[]>) {
+    if (event.previousContainer === event.container) {
+      // Same container - just reorder
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      
+      if (event.container.id === 'regular-widgets') {
+        this.dashboardState.updateRegularWidgetsOrder(this.regularWidgets);
+      } else {
+        this.dashboardState.updateExpandedWidgetsOrder(this.expandedWidgets);
+      }
+    } else {
+      // Moving between containers - transfer and change size
+      const widget = event.previousContainer.data[event.previousIndex];
+      
+      // Remove from source container
+      if (event.previousContainer.id === 'regular-widgets') {
+        this.dashboardState.removeRegularWidget(widget.id);
+      } else {
+        this.dashboardState.removeExpandedWidget(widget.id);
+      }
+      
+      // Add to target container
+      if (event.container.id === 'regular-widgets') {
+        this.dashboardState.addRegularWidget(widget.type);
+      } else {
+        this.dashboardState.addExpandedWidget(widget.type);
+      }
+    }
   }
 }

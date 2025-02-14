@@ -48,15 +48,19 @@
   <div class="dashboard-content">
     <!-- Regular Widgets Grid -->
     <div 
+      id="regular-widgets"
       class="regular-widgets-container"
       cdkDropList
-      (cdkDropListDropped)="onRegularWidgetDrop($event)"
+      #regularList="cdkDropList"
+      [cdkDropListData]="regularWidgets"
+      [cdkDropListConnectedTo]="[expandedList]"
+      (cdkDropListDropped)="onDrop($event)"
     >
       @for (widget of regularWidgets; track widget.id) {
         <div 
           class="widget-wrapper"
           cdkDrag
-          cdkDragHandle
+          [cdkDragData]="widget"
         >
           <div class="widget-content">
             <app-metric-widget
@@ -70,15 +74,19 @@
 
     <!-- Expanded Widgets Grid -->
     <div 
+      id="expanded-widgets"
       class="expanded-widgets-container"
       cdkDropList
-      (cdkDropListDropped)="onExpandedWidgetDrop($event)"
+      #expandedList="cdkDropList"
+      [cdkDropListData]="expandedWidgets"
+      [cdkDropListConnectedTo]="[regularList]"
+      (cdkDropListDropped)="onDrop($event)"
     >
       @for (widget of expandedWidgets; track widget.id) {
         <div 
           class="widget-wrapper"
           cdkDrag
-          cdkDragHandle
+          [cdkDragData]="widget"
         >
           <div class="widget-content">
             <app-expanded-metric-widget
