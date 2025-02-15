@@ -1,6 +1,9 @@
-import { Component, OnInit, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component, ElementRef, Input, OnInit, ViewChild, ErrorHandler } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+import { MatButtonModule } from '@angular/material/button';
 import { DashboardStateService, MetricType } from '../../services/dashboard-state.service';
 import { NumberAnimationService } from '../../services/number-animation.service';
 import { BaseMetricWidget } from '../base-metric-widget';
@@ -12,214 +15,125 @@ import { combineLatest } from 'rxjs';
   standalone: true,
   imports: [
     CommonModule,
-    RouterLink
+    RouterLink,
+    MatMenuModule,
+    MatIconModule,
+    MatButtonModule
   ],
   templateUrl: './expanded-metric-widget.component.html',
   styleUrl: './expanded-metric-widget.component.scss'
 })
-export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements OnInit, OnDestroy {
-  isTargetReached: boolean = false;
+export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements OnInit {
   @ViewChild('trendChart') trendChartCanvas!: ElementRef;
-  private chart: Chart | null = null;
-  private resizeObserver: ResizeObserver | null = null;
+  
+  private trendChart: Chart | null = null;
+  isTargetReached: boolean = false;
+  override progressPercentage: number = 0;
 
   constructor(
-    dashboardState: DashboardStateService,
-    numberAnimation: NumberAnimationService
+    protected override dashboardState: DashboardStateService,
+    protected override numberAnimation: NumberAnimationService,
+    protected override errorHandler: ErrorHandler
   ) {
-    super(dashboardState, numberAnimation);
+    super(dashboardState, numberAnimation, errorHandler);
   }
 
   override ngOnInit() {
     super.ngOnInit();
     
-    // Combine all subscriptions that affect chart data
+    // Combine all subscriptions that affect widget data
     this.subscriptions.add(
       combineLatest([
         this.dashboardState.selectedDay$,
         this.dashboardState.deviceType$,
         this.dashboardState.expandedWidgets$
       ]).subscribe(() => {
-        this.updateChartData();
-        // Update the dataset label
-        if (this.chart) {
-          this.chart.data.datasets[0].label = this.metricLabel;
-        }
+        this.calculateMetrics();
       })
     );
   }
 
   ngAfterViewInit() {
-    this.initChart();
-    // Setup resize observer
-    this.resizeObserver = new ResizeObserver(() => {
-      if (this.chart) {
-        this.chart.resize();
-      }
-    });
+    this.initTrendChart();
+    this.updateChartData();
+  }
+
+  private initTrendChart() {
+    const ctx = this.trendChartCanvas.nativeElement.getContext('2d');
     
-    if (this.trendChartCanvas?.nativeElement) {
-      this.resizeObserver.observe(this.trendChartCanvas.nativeElement);
-    }
-  }
-
-  override ngOnDestroy() {
-    super.ngOnDestroy();
-    if (this.chart) {
-      this.chart.destroy();
-    }
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-    }
-  }
-
-  private initChart() {
-    if (this.trendChartCanvas) {
-      const ctx = this.trendChartCanvas.nativeElement.getContext('2d');
-      
-      const widget = this.dashboardState.getWidget(this.id);
-      const isPageViews = widget?.type === 'pageViews';
-      
-      const chartColor = isPageViews 
-        ? 'hsl(270 91.2% 59.8%)' // Purple for page views
-        : 'hsl(217.2 91.2% 59.8%)'; // Blue for users
-      
-      const config: ChartConfiguration = {
-        type: 'line',
-        data: {
-          labels: [],
-          datasets: [{
-            label: this.metricLabel,
-            data: [],
-            fill: true,
-            borderColor: chartColor,
-            backgroundColor: `${chartColor.split(')')[0]} / 0.1)`,
-            tension: 0.4,
-            borderWidth: 2,
-            pointRadius: 3,
-            pointHoverRadius: 5
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          animation: {
-            duration: 750,
-            easing: 'easeOutQuart'
-          },
-          transitions: {
-            active: {
-              animation: {
-                duration: 750
+    const config: ChartConfiguration = {
+      type: 'line',
+      data: {
+        labels: this.getLastSevenDays(),
+        datasets: [{
+          label: this.metricLabel,
+          data: [],
+          borderColor: this.metricType === 'users' ? '#1976d2' : '#9c27b0',
+          backgroundColor: this.metricType === 'users' ? 'rgba(25, 118, 210, 0.1)' : 'rgba(156, 39, 176, 0.1)',
+          fill: true,
+          tension: 0.4,
+          borderWidth: 2,
+          pointRadius: 4,
+          pointHoverRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            padding: 10,
+            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            titleColor: '#1a1a1a',
+            bodyColor: '#666',
+            borderColor: '#e9ecef',
+            borderWidth: 1,
+            displayColors: false,
+            callbacks: {
+              label: (context) => {
+                return `${this.formatNumber(context.parsed.y)}`;
               }
             }
           },
-          animations: {
-            y: {
-              easing: 'easeOutQuart',
-              duration: 750
-            }
-          },
-          interaction: {
-            intersect: false,
-            mode: 'index'
-          },
-          plugins: {
-            legend: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            grid: {
               display: false
             },
-            tooltip: {
-              backgroundColor: 'hsl(0 0% 100%)',
-              titleColor: 'hsl(240 5.9% 10%)',
-              bodyColor: 'hsl(240 3.8% 46.1%)',
-              borderColor: 'hsl(240 5.9% 90%)',
-              borderWidth: 1,
-              padding: 8,
-              boxPadding: 6,
-              usePointStyle: true,
-              callbacks: {
-                label: (context) => {
-                  return ` ${this.formatNumber(context.raw as number)}`;
-                }
-              }
+            ticks: {
+              color: '#666'
             }
           },
-          scales: {
-            x: {
-              grid: {
-                display: false
-              },
-              ticks: {
-                maxRotation: 0,
-                font: {
-                  size: 10
-                }
-              }
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: '#e9ecef'
             },
-            y: {
-              beginAtZero: true,
-              grid: {
-                color: 'hsl(240 5.9% 90%)'
-              },
-              border: {
-                display: false
-              },
-              ticks: {
-                font: {
-                  size: 10
-                },
-                callback: (value) => this.formatNumber(value as number)
-              }
+            ticks: {
+              color: '#666',
+              callback: (value) => this.formatNumber(value as number)
             }
           }
         }
-      };
+      }
+    };
 
-      this.chart = new Chart(ctx, config);
-      this.updateChartData();
-    }
-  }
-
-  protected override calculateMetrics(): void {
-    super.calculateMetrics();
-    this.isTargetReached = this.progressPercentage >= 100;
+    this.trendChart = new Chart(ctx, config);
   }
 
   private updateChartData() {
-    if (!this.chart) return;
-
-    const widget = this.dashboardState.getWidget(this.id);
-    if (!widget) return;
-
-    const metricData = this.dashboardState.getMetricData(widget.type);
-    const deviceType = this.dashboardState.getCurrentDeviceType();
-    const selectedDay = this.dashboardState.getCurrentSelectedDay();
-
-    // Find the index of the selected day
-    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
-    if (selectedDayIndex === -1) return;
-
-    // Get 7 days of data ending at the selected day
-    const startIndex = Math.max(0, selectedDayIndex - 6);
-    const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
-
-    const labels = relevantDays.map(d => {
-      const date = new Date(d.date);
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    });
-
-    const data = relevantDays.map(d => 
-      deviceType === 'total' ? d.total : 
-      deviceType === 'desktop' ? d.desktop : d.mobile
-    );
-
-    // Update data with animation
-    const dataset = this.chart.data.datasets[0];
-    dataset.data = data;
-    this.chart.data.labels = labels;
+    if (!this.trendChart) return;
     
-    // Force a full render with animations
-    this.chart.update('active');
+    const data = this.getLastSevenDaysData();
+    this.trendChart.data.labels = this.getLastSevenDays();
+    this.trendChart.data.datasets[0].data = data;
+    this.trendChart.update();
   }
 
   getMonthlyTarget(): number {
@@ -243,8 +157,112 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     }
   }
 
-  toggleSize(): void {
+  override toggleSize(): void {
     this.dashboardState.toggleWidgetSize(this.id);
     this.showMenu = false;
+  }
+
+  private updateProgressStatus() {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    // Calculate cumulative value up to selected day
+    const cumulativeValue = metricData.dailyData
+      .filter(d => d.date <= selectedDay)
+      .reduce((sum, day) => {
+        const value = deviceType === 'total' ? day.total :
+                     deviceType === 'desktop' ? day.desktop : day.mobile;
+        return sum + value;
+      }, 0);
+
+    // Update progress percentage
+    this.progressPercentage = Math.min((cumulativeValue / metricData.monthlyTarget) * 100, 100);
+    this.isTargetReached = this.progressPercentage >= 100;
+  }
+
+  getHighestValue(): number {
+    const data = this.getLastSevenDaysData();
+    return Math.max(...data);
+  }
+
+  getAverageValue(): number {
+    const data = this.getLastSevenDaysData();
+    const sum = data.reduce((a, b) => a + b, 0);
+    return Math.round(sum / data.length);
+  }
+
+  getDayOverDayChange(): number {
+    const data = this.getLastSevenDaysData();
+    if (data.length < 2) return 0;
+    
+    const today = data[data.length - 1];
+    const yesterday = data[data.length - 2];
+    
+    if (yesterday === 0) return 0;
+    return Math.round(((today - yesterday) / yesterday) * 100);
+  }
+
+  getWeekOverWeekChange(): number {
+    const data = this.getLastSevenDaysData();
+    if (data.length < 7) return 0;
+    
+    const today = data[data.length - 1];
+    const lastWeek = data[0];
+    
+    if (lastWeek === 0) return 0;
+    return Math.round(((today - lastWeek) / lastWeek) * 100);
+  }
+
+  private getLastSevenDays(): string[] {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return [];
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    // Find the index of the selected day
+    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
+    if (selectedDayIndex === -1) return [];
+
+    // Get 7 days of data ending at the selected day
+    const startIndex = Math.max(0, selectedDayIndex - 6);
+    const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
+
+    return relevantDays.map(d => {
+      const date = new Date(d.date);
+      return date.toLocaleDateString('en-US', { weekday: 'short' });
+    });
+  }
+
+  private getLastSevenDaysData(): number[] {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return [];
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    // Find the index of the selected day
+    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
+    if (selectedDayIndex === -1) return [];
+
+    // Get 7 days of data ending at the selected day
+    const startIndex = Math.max(0, selectedDayIndex - 6);
+    const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
+
+    return relevantDays.map(d => 
+      deviceType === 'total' ? d.total : 
+      deviceType === 'desktop' ? d.desktop : d.mobile
+    );
+  }
+
+  protected override calculateMetrics(): void {
+    super.calculateMetrics();
+    this.updateProgressStatus();
+    this.updateChartData();
   }
 }

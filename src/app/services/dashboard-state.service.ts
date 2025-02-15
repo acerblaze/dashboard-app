@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
+import { map, debounceTime } from 'rxjs/operators';
 import { mockMetricsData } from '../data/mock-metrics';
 import { MetricData } from '../data/mock-metrics';
 
@@ -31,10 +31,157 @@ export class DashboardStateService {
 
   // Store metric data
   private readonly metricsData = mockMetricsData;
-
   private nextWidgetId = 1;
 
-  constructor() {}
+  // Memoization cache
+  private metricDataCache = new Map<string, any>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+  constructor() {
+    // Initialize persistence
+    this.loadPersistedState();
+    // Set up auto-save
+    this.setupStatePersistence();
+  }
+
+  private loadPersistedState(): void {
+    try {
+      const savedState = localStorage.getItem('dashboardState');
+      if (savedState) {
+        const state = JSON.parse(savedState);
+        if (this.isValidPersistedState(state)) {
+          this.deviceTypeSubject.next(state.deviceType);
+          this.selectedDaySubject.next(state.selectedDay);
+          this.regularWidgetsSubject.next(state.regularWidgets);
+          this.expandedWidgetsSubject.next(state.expandedWidgets);
+          this.nextWidgetId = state.nextWidgetId;
+        }
+      }
+    } catch (error) {
+      console.error('Error loading persisted state:', error);
+    }
+  }
+
+  private isValidPersistedState(state: any): boolean {
+    return (
+      state &&
+      typeof state.deviceType === 'string' &&
+      typeof state.selectedDay === 'string' &&
+      Array.isArray(state.regularWidgets) &&
+      Array.isArray(state.expandedWidgets) &&
+      typeof state.nextWidgetId === 'number'
+    );
+  }
+
+  private setupStatePersistence(): void {
+    combineLatest([
+      this.deviceType$,
+      this.selectedDay$,
+      this.regularWidgets$,
+      this.expandedWidgets$
+    ]).pipe(
+      debounceTime(1000) // Debounce saves to reduce storage operations
+    ).subscribe(() => {
+      this.persistState();
+    });
+  }
+
+  private persistState(): void {
+    try {
+      const state = {
+        deviceType: this.deviceTypeSubject.value,
+        selectedDay: this.selectedDaySubject.value,
+        regularWidgets: this.regularWidgetsSubject.value,
+        expandedWidgets: this.expandedWidgetsSubject.value,
+        nextWidgetId: this.nextWidgetId
+      };
+      localStorage.setItem('dashboardState', JSON.stringify(state));
+    } catch (error) {
+      console.error('Error persisting state:', error);
+    }
+  }
+
+  // Enhanced metric data retrieval with memoization
+  getMetricData(type: MetricType): MetricData {
+    const cacheKey = `${type}_${this.deviceTypeSubject.value}_${this.selectedDaySubject.value}`;
+    const cached = this.metricDataCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      return cached.data;
+    }
+
+    const data = this.metricsData[type];
+    this.metricDataCache.set(cacheKey, {
+      data,
+      timestamp: Date.now()
+    });
+
+    return data;
+  }
+
+  // Optimized widget operations
+  private updateWidgets(subject: BehaviorSubject<WidgetConfig[]>, updater: (widgets: WidgetConfig[]) => WidgetConfig[]): void {
+    const currentWidgets = subject.value;
+    const updatedWidgets = updater([...currentWidgets]);
+    
+    if (!this.areWidgetsEqual(currentWidgets, updatedWidgets)) {
+      subject.next(updatedWidgets);
+    }
+  }
+
+  private areWidgetsEqual(a: WidgetConfig[], b: WidgetConfig[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((widget, index) => 
+      widget.id === b[index].id && 
+      widget.type === b[index].type
+    );
+  }
+
+  // Enhanced widget operations
+  addRegularWidget(type: MetricType): number {
+    const newId = this.nextWidgetId++;
+    this.updateWidgets(this.regularWidgetsSubject, widgets => [
+      ...widgets,
+      { id: newId, type }
+    ]);
+    return newId;
+  }
+
+  addExpandedWidget(type: MetricType): number {
+    const newId = this.nextWidgetId++;
+    this.updateWidgets(this.expandedWidgetsSubject, widgets => [
+      ...widgets,
+      { id: newId, type }
+    ]);
+    return newId;
+  }
+
+  updateRegularWidgetsOrder(widgets: WidgetConfig[]): void {
+    if (!this.validateWidgetList(widgets, this.regularWidgetsSubject.value)) {
+      console.error('Invalid widget order update: widget validation failed');
+      return;
+    }
+    this.updateWidgets(this.regularWidgetsSubject, () => [...widgets]);
+  }
+
+  updateExpandedWidgetsOrder(widgets: WidgetConfig[]): void {
+    if (!this.validateWidgetList(widgets, this.expandedWidgetsSubject.value)) {
+      console.error('Invalid widget order update: widget validation failed');
+      return;
+    }
+    this.updateWidgets(this.expandedWidgetsSubject, () => [...widgets]);
+  }
+
+  private validateWidgetList(newWidgets: WidgetConfig[], currentWidgets: WidgetConfig[]): boolean {
+    if (newWidgets.length !== currentWidgets.length) return false;
+    
+    const currentIds = new Set(currentWidgets.map(w => w.id));
+    const validMetricTypes: MetricType[] = ['users', 'pageViews'];
+    return newWidgets.every(widget => 
+      currentIds.has(widget.id) && 
+      validMetricTypes.includes(widget.type)
+    );
+  }
 
   setDeviceType(type: DeviceType): void {
     this.deviceTypeSubject.next(type);
@@ -50,48 +197,6 @@ export class DashboardStateService {
 
   getCurrentSelectedDay(): string {
     return this.selectedDaySubject.value;
-  }
-
-  getMetricData(type: MetricType): MetricData {
-    return this.metricsData[type];
-  }
-
-  addRegularWidget(type: MetricType): number {
-    const newId = this.nextWidgetId++;
-    const widgets = this.regularWidgetsSubject.value;
-    widgets.push({
-      id: newId,
-      type
-    });
-    this.regularWidgetsSubject.next(widgets);
-    return newId;
-  }
-
-  addExpandedWidget(type: MetricType): number {
-    const newId = this.nextWidgetId++;
-    const widgets = this.expandedWidgetsSubject.value;
-    widgets.push({
-      id: newId,
-      type
-    });
-    this.expandedWidgetsSubject.next(widgets);
-    return newId;
-  }
-
-  updateRegularWidgetsOrder(widgets: WidgetConfig[]): void {
-    if (widgets.length !== this.regularWidgetsSubject.value.length) {
-      console.error('Invalid widget order update: widget count mismatch');
-      return;
-    }
-    this.regularWidgetsSubject.next([...widgets]);
-  }
-
-  updateExpandedWidgetsOrder(widgets: WidgetConfig[]): void {
-    if (widgets.length !== this.expandedWidgetsSubject.value.length) {
-      console.error('Invalid widget order update: widget count mismatch');
-      return;
-    }
-    this.expandedWidgetsSubject.next([...widgets]);
   }
 
   getRegularWidgets(): WidgetConfig[] {

@@ -1,69 +1,67 @@
 <div class="expanded-metric-widget">
   <!-- Header with title and controls -->
   <div class="widget-header">
-    <h3>{{ metricLabel }}</h3>
-    <div class="widget-controls">
-      <button class="icon-button" (click)="toggleMenu()" aria-label="More options">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/>
-        </svg>
-      </button>
-      <!-- Dropdown Menu -->
-      <div class="dropdown-menu" [class.show]="showMenu">
-        <a [routerLink]="['/metric', metricType]" class="dropdown-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
-          </svg>
-          Details
-        </a>
-        <button class="dropdown-item" (click)="toggleSize()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
-            <path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
-          </svg>
-          Collapse Widget
-        </button>
-        <button class="dropdown-item" (click)="toggleMetricType()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M17 18a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2"/><circle cx="12" cy="10" r="3"/><circle cx="12" cy="12" r="10"/>
-          </svg>
-          Show {{ metricType === 'users' ? 'Page Views' : 'Users' }}
-        </button>
+    <div class="title-section">
+      <h3>{{ metricLabel }}</h3>
+      <div class="metric-value-section">
+        <div class="today-value">{{ formatNumber(displayValue) }}</div>
+        <span class="today-label">Today</span>
       </div>
     </div>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="more-options">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu" xPosition="before">
+      <button mat-menu-item [routerLink]="['/metric', metricType]">
+        <mat-icon>analytics</mat-icon>
+        <span>Details</span>
+      </button>
+      <button mat-menu-item (click)="toggleSize()">
+        <mat-icon>close_fullscreen</mat-icon>
+        <span>Collapse Widget</span>
+      </button>
+      <button mat-menu-item (click)="toggleMetricType()">
+        <mat-icon>{{ metricType === 'users' ? 'visibility' : 'group' }}</mat-icon>
+        <span>Show {{ metricType === 'users' ? 'Page Views' : 'Users' }}</span>
+      </button>
+    </mat-menu>
   </div>
 
-  <!-- Progress Section -->
-  <div class="progress-section">
-    <div class="progress-header">
-      <span class="progress-label">Monthly Progress</span>
-      <span class="progress-percentage">{{ progressPercentage | number:'1.0-0' }}%</span>
+  <!-- Main content -->
+  <div class="widget-content">
+    <div class="monthly-progress">
+      <div class="progress-header">
+        <span class="progress-title">Monthly Goal Progress</span>
+        <span class="progress-value">{{ formatNumber(displayCumulativeValue) }} of {{ formatNumber(getMonthlyTarget()) }} target</span>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar" 
+             [style.width.%]="progressPercentage" 
+             [class.reached]="isTargetReached">
+        </div>
+      </div>
+      <div class="progress-footer">
+        <span class="percentage">{{ progressPercentage | number:'1.0-0' }}% towards goal</span>
+        <span class="status" [class.reached]="isTargetReached">
+          {{ isTargetReached ? 'Goal Reached!' : 'In Progress' }}
+        </span>
+      </div>
     </div>
-  <div class="progress-container">
-      <div class="progress-bar" [style.width.%]="progressPercentage" [class.reached]="isTargetReached"></div>
-    </div>
-  </div>
 
-  <!-- Metrics Grid -->
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <span class="metric-label">Today's Value</span>
-      <span class="metric-value">{{ formatNumber(displayValue) }}</span>
+    <div class="daily-stats">
+      <div class="stat-card">
+        <span class="stat-label">vs. Yesterday</span>
+        <span class="stat-value" [class.positive]="getDayOverDayChange() > 0" [class.negative]="getDayOverDayChange() < 0">
+          {{ getDayOverDayChange() > 0 ? '+' : '' }}{{ getDayOverDayChange() | number:'1.0-0' }}%
+        </span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">vs. Last Week</span>
+        <span class="stat-value" [class.positive]="getWeekOverWeekChange() > 0" [class.negative]="getWeekOverWeekChange() < 0">
+          {{ getWeekOverWeekChange() > 0 ? '+' : '' }}{{ getWeekOverWeekChange() | number:'1.0-0' }}%
+        </span>
+      </div>
     </div>
-    <div class="metric-card highlight">
-      <span class="metric-label">Monthly Total</span>
-      <span class="metric-value">{{ formatNumber(displayCumulativeValue) }}</span>
-    </div>
-    <div class="metric-card" [class.target-reached]="isTargetReached">
-      <span class="metric-label">{{ isTargetReached ? 'Target Reached!' : 'Target' }}</span>
-      <span class="metric-value">{{ formatNumber(getMonthlyTarget()) }}</span>
-    </div>
-  </div>
-
-  <!-- Trend Chart -->
-  <div class="trend-chart-container">
-    <h4>Trend</h4>
-    <canvas #trendChart></canvas>
   </div>
 </div>
 
