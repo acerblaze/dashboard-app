@@ -21,22 +21,18 @@
     </mat-menu>
   </div>
 
-  <!-- Progress indicator -->
-  <div class="progress-container">
-    <div class="progress-bar" [style.width.%]="progressPercentage">
-      <div class="progress-label">
-        {{ progressPercentage | number:'1.0-0' }}%
-      </div>
+  <!-- Current value -->
+  <div class="metric-value">
+    <div class="current-value">
+      {{ formatNumber(displayValue) }} <span class="today-label">Today</span>
     </div>
   </div>
 
-  <!-- Current value -->
-  <div class="current-value">
-    {{ formatNumber(displayValue) }}
-  </div>
-
-  <!-- Cumulative value -->
-  <div class="cumulative-value">
-    Total: {{ formatNumber(displayCumulativeValue) }}
+  <!-- Sparkline chart -->
+  <div class="sparkline-section">
+    <div class="sparkline-header">Last 7 days</div>
+    <div class="sparkline-container">
+      <canvas #sparklineChart></canvas>
+    </div>
   </div>
 </div>

@@ -1,8 +1,8 @@
 .metric-widget {
   background: white;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  padding: 16px;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -14,58 +14,70 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
 
     h3 {
       margin: 0;
-      font-size: 1.1rem;
+      font-size: 0.875rem;
       font-weight: 500;
+      color: hsl(240 3.8% 46.1%);
     }
 
     .more-options {
-      color: rgba(0, 0, 0, 0.54);
+      color: hsl(240 3.8% 46.1%);
       &:hover {
-        color: rgba(0, 0, 0, 0.87);
+        color: hsl(240 5.9% 10%);
       }
     }
   }
 
-  .progress-container {
-    background: #f0f0f0;
-    border-radius: 8px;
-    overflow: hidden;
-    height: 24px;
-    position: relative;
+  .metric-value {
+    display: flex;
+    flex-direction: column;
+    margin-top: 4px;
 
-    .progress-bar {
-      background: linear-gradient(90deg, #007bff, #0056b3);
-      height: 100%;
-      transition: width 0.75s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
+    .current-value {
+      font-size: 1.875rem;
+      font-weight: 600;
+      color: hsl(240 5.9% 10%);
+      line-height: 1.2;
 
-      .progress-label {
-        position: absolute;
-        right: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: white;
-        font-size: 12px;
+      .today-label {
+        font-size: 0.875rem;
         font-weight: 500;
+        color: hsl(240 3.8% 46.1%);
       }
+    }
+
+    .value-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: hsl(240 3.8% 46.1%);
     }
   }
 
-  .current-value {
-    font-size: 24px;
-    font-weight: 600;
-    color: #333;
+  .sparkline-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     margin-top: auto;
+
+    .sparkline-header {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: hsl(240 3.8% 46.1%);
+      padding: 0 8px;
+    }
+
+    .sparkline-container {
+      height: 40px;
+      margin: 0 -8px;
+    }
   }
 
   .cumulative-value {
-    font-size: 14px;
-    color: #666;
-    margin-top: 4px;
+    font-size: 0.75rem;
+    color: hsl(240 3.8% 46.1%);
+    margin-top: auto;
   }
 }
 

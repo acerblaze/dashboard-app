@@ -77,6 +77,13 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     if (this.trendChartCanvas) {
       const ctx = this.trendChartCanvas.nativeElement.getContext('2d');
       
+      const widget = this.dashboardState.getWidget(this.id);
+      const isPageViews = widget?.type === 'pageViews';
+      
+      const chartColor = isPageViews 
+        ? 'hsl(270 91.2% 59.8%)' // Purple for page views
+        : 'hsl(217.2 91.2% 59.8%)'; // Blue for users
+      
       const config: ChartConfiguration = {
         type: 'line',
         data: {
@@ -85,8 +92,8 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
             label: this.metricLabel,
             data: [],
             fill: true,
-            borderColor: 'hsl(217.2 91.2% 59.8%)',
-            backgroundColor: 'hsl(217.2 91.2% 59.8% / 0.1)',
+            borderColor: chartColor,
+            backgroundColor: `${chartColor.split(')')[0]} / 0.1)`,
             tension: 0.4,
             borderWidth: 2,
             pointRadius: 3,

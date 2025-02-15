@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardStateService, MetricType } from '../../services/dashboard-state.service';
@@ -7,6 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { BaseMetricWidget } from '../base-metric-widget';
+import { Chart, ChartConfiguration } from 'chart.js';
+import { combineLatest } from 'rxjs';
 
 @Component({
   selector: 'app-metric-widget',
@@ -21,14 +23,169 @@ import { BaseMetricWidget } from '../base-metric-widget';
   templateUrl: './metric-widget.component.html',
   styleUrl: './metric-widget.component.scss'
 })
-export class MetricWidgetComponent extends BaseMetricWidget {
+export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, OnDestroy {
   showMenu = false;
+  @ViewChild('sparklineChart') sparklineChartCanvas!: ElementRef;
+  private chart: Chart | null = null;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(
     dashboardState: DashboardStateService,
     numberAnimation: NumberAnimationService
   ) {
     super(dashboardState, numberAnimation);
+  }
+
+  override ngOnInit() {
+    super.ngOnInit();
+    
+    this.subscriptions.add(
+      combineLatest([
+        this.dashboardState.selectedDay$,
+        this.dashboardState.deviceType$,
+        this.dashboardState.expandedWidgets$
+      ]).subscribe(() => {
+        this.updateChartData();
+      })
+    );
+  }
+
+  ngAfterViewInit() {
+    this.initChart();
+    this.resizeObserver = new ResizeObserver(() => {
+      if (this.chart) {
+        this.chart.resize();
+      }
+    });
+    
+    if (this.sparklineChartCanvas?.nativeElement) {
+      this.resizeObserver.observe(this.sparklineChartCanvas.nativeElement);
+    }
+  }
+
+  override ngOnDestroy() {
+    super.ngOnDestroy();
+    if (this.chart) {
+      this.chart.destroy();
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+    }
+  }
+
+  private initChart() {
+    if (this.sparklineChartCanvas) {
+      const ctx = this.sparklineChartCanvas.nativeElement.getContext('2d');
+      
+      const widget = this.dashboardState.getWidget(this.id);
+      const isPageViews = widget?.type === 'pageViews';
+      
+      const chartColor = isPageViews 
+        ? 'hsl(270 91.2% 59.8%)' // Purple for page views
+        : 'hsl(217.2 91.2% 59.8%)'; // Blue for users
+      
+      const config: ChartConfiguration = {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: this.metricLabel,
+            data: [],
+            fill: true,
+            borderColor: chartColor,
+            backgroundColor: `${chartColor.split(')')[0]} / 0.1)`,
+            tension: 0.4,
+            borderWidth: 1.5,
+            pointRadius: 2,
+            pointHoverRadius: 2,
+            pointBackgroundColor: chartColor,
+            pointBorderColor: 'white',
+            pointBorderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              display: false
+            },
+            tooltip: {
+              enabled: true,
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'hsl(0 0% 100%)',
+              titleColor: 'hsl(240 5.9% 10%)',
+              bodyColor: 'hsl(240 3.8% 46.1%)',
+              borderColor: 'hsl(240 5.9% 90%)',
+              borderWidth: 1,
+              padding: 4,
+              boxPadding: 2,
+              displayColors: false,
+              callbacks: {
+                title: () => '',
+                label: (context) => {
+                  return `${context.label}: ${this.formatNumber(context.raw as number)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              display: false
+            },
+            y: {
+              display: false,
+              suggestedMin: 0,
+              grace: '10%'
+            }
+          },
+          interaction: {
+            intersect: false,
+            mode: 'index'
+          },
+          hover: {
+            mode: 'index',
+            intersect: false
+          }
+        }
+      };
+
+      this.chart = new Chart(ctx, config);
+      this.updateChartData();
+    }
+  }
+
+  private updateChartData() {
+    if (!this.chart) return;
+
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+
+    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
+    if (selectedDayIndex === -1) return;
+
+    // Get 7 days of data ending at the selected day
+    const startIndex = Math.max(0, selectedDayIndex - 6);
+    const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
+
+    const labels = relevantDays.map(d => {
+      const date = new Date(d.date);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+
+    const data = relevantDays.map(d => 
+      deviceType === 'total' ? d.total : 
+      deviceType === 'desktop' ? d.desktop : d.mobile
+    );
+
+    this.chart.data.labels = labels;
+    this.chart.data.datasets[0].data = data;
+    this.chart.update('active');
   }
 
   override toggleSize(): void {
