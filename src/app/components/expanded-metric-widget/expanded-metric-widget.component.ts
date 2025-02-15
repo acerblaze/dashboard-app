@@ -272,10 +272,14 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   }
 
   getAverageComparison(): number {
-    const average = this.getAverageValue();
-    if (average === 0) return 0;
+    const data = this.getLastSevenDaysData();
+    if (data.length === 0) return 0;
     
-    return Math.round(((this.displayValue - average) / average) * 100);
+    const today = data[data.length - 1];
+    const average = data.reduce((sum, value) => sum + value, 0) / data.length;
+    
+    if (average === 0) return 0;
+    return Math.round(((today - average) / average) * 100);
   }
 
   private getLastSevenDays(): string[] {
@@ -383,27 +387,27 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
           }
         );
 
-        // Calculate and animate comparisons after current value is set
-        const newAverageComparison = this.calculateAverageComparison();
-        const newWeekComparison = this.calculateWeekOverWeekChange();
+        // Calculate and animate comparisons
+        const newWeekComparison = this.getWeekOverWeekChange();
+        const newAverageComparison = this.getAverageComparison();
 
         this.numberAnimation.animateValue(
-          this.lastAverageComparison,
-          newAverageComparison,
+          this.lastWeekComparison,
+          newWeekComparison,
           (value) => {
-            this.displayAverageComparison = value;
+            this.displayWeekComparison = value;
           },
           {
             duration: 750,
             easing: NumberAnimationService.easings.easeOutExpo
           }
         );
-        
+
         this.numberAnimation.animateValue(
-          this.lastWeekComparison,
-          newWeekComparison,
+          this.lastAverageComparison,
+          newAverageComparison,
           (value) => {
-            this.displayWeekComparison = value;
+            this.displayAverageComparison = value;
           },
           {
             duration: 750,
@@ -443,8 +447,8 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
         // Update all last values
         this.lastCurrentValue = newCurrentValue;
         this.lastCumulativeValue = newCumulativeValue;
-        this.lastAverageComparison = newAverageComparison;
         this.lastWeekComparison = newWeekComparison;
+        this.lastAverageComparison = newAverageComparison;
         
         // Update chart
         this.updateChartData();
@@ -452,35 +456,5 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     } catch (err) {
       this.handleError(err);
     }
-  }
-
-  private calculateAverageComparison(): number {
-    const average = this.getAverageValue();
-    if (average === 0) return 0;
-    
-    // Use displayValue instead of currentValue for smoother animations
-    return Math.round(((this.displayValue - average) / average) * 100);
-  }
-
-  private calculateWeekOverWeekChange(): number {
-    const widget = this.dashboardState.getWidget(this.id);
-    if (!widget) return 0;
-
-    const metricData = this.dashboardState.getMetricData(widget.type);
-    const deviceType = this.dashboardState.getCurrentDeviceType();
-    const selectedDay = this.dashboardState.getCurrentSelectedDay();
-    
-    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
-    if (selectedDayIndex === -1 || selectedDayIndex < 7) return 0;
-
-    // Use current day's displayValue for smoother animations
-    const lastWeekValue = deviceType === 'total'
-      ? metricData.dailyData[selectedDayIndex - 7].total
-      : deviceType === 'desktop'
-        ? metricData.dailyData[selectedDayIndex - 7].desktop
-        : metricData.dailyData[selectedDayIndex - 7].mobile;
-
-    if (lastWeekValue === 0) return 0;
-    return Math.round(((this.displayValue - lastWeekValue) / lastWeekValue) * 100);
   }
 }
