@@ -8,7 +8,7 @@ import { DashboardStateService, MetricType } from '../../services/dashboard-stat
 import { NumberAnimationService } from '../../services/number-animation.service';
 import { BaseMetricWidget } from '../base-metric-widget';
 import { Chart, ChartConfiguration } from 'chart.js';
-import { combineLatest } from 'rxjs';
+import { combineLatest, filter, map, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-expanded-metric-widget',
@@ -29,6 +29,13 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   private trendChart: Chart | null = null;
   isTargetReached: boolean = false;
   override progressPercentage: number = 0;
+  actualProgressPercentage: number = 0;
+
+  // Add display properties for animated values
+  private lastAverageComparison: number = 0;
+  private lastWeekComparison: number = 0;
+  displayAverageComparison: number = 0;
+  displayWeekComparison: number = 0;
 
   constructor(
     protected override dashboardState: DashboardStateService,
@@ -39,16 +46,34 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   }
 
   override ngOnInit() {
-    super.ngOnInit();
-    
-    // Combine all subscriptions that affect widget data
+    // Use the same subscription setup as the base widget
     this.subscriptions.add(
       combineLatest([
-        this.dashboardState.selectedDay$,
         this.dashboardState.deviceType$,
-        this.dashboardState.expandedWidgets$
-      ]).subscribe(() => {
-        this.calculateMetrics();
+        this.dashboardState.selectedDay$,
+        this.dashboardState.regularWidgets$.pipe(
+          map(widgets => widgets.find(w => w.id === this.id)),
+          distinctUntilChanged()
+        ),
+        this.dashboardState.expandedWidgets$.pipe(
+          map(widgets => widgets.find(w => w.id === this.id)),
+          distinctUntilChanged()
+        )
+      ]).pipe(
+        filter(() => {
+          const widget = this.dashboardState.getWidget(this.id);
+          return !!widget;
+        })
+      ).subscribe({
+        next: () => {
+          try {
+            this.calculateMetrics();
+            this.error = null;
+          } catch (err) {
+            this.handleError(err);
+          }
+        },
+        error: (err) => this.handleError(err)
       })
     );
   }
@@ -209,9 +234,8 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
         return sum + value;
       }, 0);
 
-    // Update progress percentage
-    this.progressPercentage = Math.min((cumulativeValue / metricData.monthlyTarget) * 100, 100);
-    this.isTargetReached = this.progressPercentage >= 100;
+    // Only update isTargetReached flag here
+    this.isTargetReached = (cumulativeValue / metricData.monthlyTarget) * 100 >= 100;
   }
 
   getHighestValue(): number {
@@ -298,8 +322,165 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   }
 
   protected override calculateMetrics(): void {
-    super.calculateMetrics();
-    this.updateProgressStatus();
-    this.updateChartData();
+    try {
+      // Calculate all new values first
+      const widget = this.dashboardState.getWidget(this.id);
+      if (!widget) return;
+
+      const deviceType = this.dashboardState.getCurrentDeviceType();
+      const selectedDay = this.dashboardState.getCurrentSelectedDay();
+      const metricData = this.dashboardState.getMetricData(widget.type);
+      const dayData = metricData.dailyData.find(d => d.date === selectedDay);
+      
+      if (!dayData) return;
+
+      // Calculate base metrics
+      const newCurrentValue = deviceType === 'total' 
+        ? dayData.total 
+        : deviceType === 'desktop' 
+          ? dayData.desktop 
+          : dayData.mobile;
+
+      const newCumulativeValue = metricData.dailyData
+        .filter(d => d.date <= selectedDay)
+        .reduce((sum, day) => {
+          const value = deviceType === 'total' ? day.total :
+                       deviceType === 'desktop' ? day.desktop : day.mobile;
+          return sum + value;
+        }, 0);
+
+      // Use requestAnimationFrame to ensure all animations start in the same frame
+      requestAnimationFrame(() => {
+        // First update the current value
+        const isSignificantIncrease = (newCurrentValue - this.lastCurrentValue) > this.lastCurrentValue * 0.1;
+        
+        this.numberAnimation.animateValue(
+          this.lastCurrentValue,
+          newCurrentValue,
+          (value) => {
+            this.displayValue = value;
+            this.currentValue = newCurrentValue;
+          },
+          {
+            easing: isSignificantIncrease 
+              ? NumberAnimationService.easings.easeOutBack 
+              : NumberAnimationService.easings.easeOutExpo,
+            duration: isSignificantIncrease ? 1000 : 750
+          }
+        );
+
+        // Then start other animations immediately after
+        this.numberAnimation.animateValue(
+          this.lastCumulativeValue,
+          newCumulativeValue,
+          (value) => {
+            this.displayCumulativeValue = value;
+            this.cumulativeValue = newCumulativeValue;
+          },
+          {
+            duration: 750,
+            easing: NumberAnimationService.easings.easeOutExpo
+          }
+        );
+
+        // Calculate and animate comparisons after current value is set
+        const newAverageComparison = this.calculateAverageComparison();
+        const newWeekComparison = this.calculateWeekOverWeekChange();
+
+        this.numberAnimation.animateValue(
+          this.lastAverageComparison,
+          newAverageComparison,
+          (value) => {
+            this.displayAverageComparison = value;
+          },
+          {
+            duration: 750,
+            easing: NumberAnimationService.easings.easeOutExpo
+          }
+        );
+        
+        this.numberAnimation.animateValue(
+          this.lastWeekComparison,
+          newWeekComparison,
+          (value) => {
+            this.displayWeekComparison = value;
+          },
+          {
+            duration: 750,
+            easing: NumberAnimationService.easings.easeOutExpo
+          }
+        );
+
+        // Calculate actual progress percentage (can exceed 100%)
+        const newProgressPercentage = (newCumulativeValue / metricData.monthlyTarget) * 100;
+        
+        // Animate the actual percentage display (uncapped)
+        this.numberAnimation.animateValue(
+          this.actualProgressPercentage,
+          newProgressPercentage,
+          (value) => {
+            this.actualProgressPercentage = value;
+            // Update isTargetReached based on the actual percentage
+            this.isTargetReached = value >= 100;
+          },
+          {
+            duration: 750,
+            easing: NumberAnimationService.easings.easeOutExpo
+          }
+        );
+
+        // Animate the progress bar width (capped at 100%)
+        this.numberAnimation.animateValue(
+          this.progressPercentage,
+          Math.min(newProgressPercentage, 100),
+          (value) => this.progressPercentage = value,
+          {
+            duration: 750,
+            easing: NumberAnimationService.easings.easeOutExpo
+          }
+        );
+        
+        // Update all last values
+        this.lastCurrentValue = newCurrentValue;
+        this.lastCumulativeValue = newCumulativeValue;
+        this.lastAverageComparison = newAverageComparison;
+        this.lastWeekComparison = newWeekComparison;
+        
+        // Update chart
+        this.updateChartData();
+      });
+    } catch (err) {
+      this.handleError(err);
+    }
+  }
+
+  private calculateAverageComparison(): number {
+    const average = this.getAverageValue();
+    if (average === 0) return 0;
+    
+    // Use displayValue instead of currentValue for smoother animations
+    return Math.round(((this.displayValue - average) / average) * 100);
+  }
+
+  private calculateWeekOverWeekChange(): number {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return 0;
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
+    if (selectedDayIndex === -1 || selectedDayIndex < 7) return 0;
+
+    // Use current day's displayValue for smoother animations
+    const lastWeekValue = deviceType === 'total'
+      ? metricData.dailyData[selectedDayIndex - 7].total
+      : deviceType === 'desktop'
+        ? metricData.dailyData[selectedDayIndex - 7].desktop
+        : metricData.dailyData[selectedDayIndex - 7].mobile;
+
+    if (lastWeekValue === 0) return 0;
+    return Math.round(((this.displayValue - lastWeekValue) / lastWeekValue) * 100);
   }
 }

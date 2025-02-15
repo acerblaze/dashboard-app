@@ -59,7 +59,7 @@
                  [class.users]="metricType === 'users'"
                  [class.pageviews]="metricType === 'pageViews'"
                  [class.reached]="isTargetReached">
-              <span class="progress-percentage">{{ progressPercentage | number:'1.0-0' }}%</span>
+              <span class="progress-percentage">{{ actualProgressPercentage | number:'1.0-0' }}%</span>
             </div>
           </div>
         </div>
@@ -73,8 +73,8 @@
           <span class="stat-label">vs. Monthly Average</span>
           <mat-icon>analytics</mat-icon>
         </div>
-        <span class="stat-value" [class.positive]="getAverageComparison() > 0" [class.negative]="getAverageComparison() < 0">
-          {{ getAverageComparison() > 0 ? '+' : '' }}{{ getAverageComparison() | number:'1.0-0' }}%
+        <span class="stat-value" [class.positive]="displayAverageComparison > 0" [class.negative]="displayAverageComparison < 0">
+          {{ displayAverageComparison > 0 ? '+' : '' }}{{ displayAverageComparison | number:'1.0-0' }}%
         </span>
       </div>
       <div class="stat-card">
@@ -82,8 +82,8 @@
           <span class="stat-label">vs. Last Week</span>
           <mat-icon>date_range</mat-icon>
         </div>
-        <span class="stat-value" [class.positive]="getWeekOverWeekChange() > 0" [class.negative]="getWeekOverWeekChange() < 0">
-          {{ getWeekOverWeekChange() > 0 ? '+' : '' }}{{ getWeekOverWeekChange() | number:'1.0-0' }}%
+        <span class="stat-value" [class.positive]="displayWeekComparison > 0" [class.negative]="displayWeekComparison < 0">
+          {{ displayWeekComparison > 0 ? '+' : '' }}{{ displayWeekComparison | number:'1.0-0' }}%
         </span>
       </div>
     </div>
