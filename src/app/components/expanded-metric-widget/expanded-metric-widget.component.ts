@@ -62,38 +62,51 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     const ctx = this.trendChartCanvas.nativeElement.getContext('2d');
     
     const config: ChartConfiguration = {
-      type: 'line',
+      type: 'bar',
       data: {
         labels: this.getLastSevenDays(),
         datasets: [{
           label: this.metricLabel,
           data: [],
+          backgroundColor: this.metricType === 'users' ? 'rgba(25, 118, 210, 0.2)' : 'rgba(156, 39, 176, 0.2)',
           borderColor: this.metricType === 'users' ? '#1976d2' : '#9c27b0',
-          backgroundColor: this.metricType === 'users' ? 'rgba(25, 118, 210, 0.1)' : 'rgba(156, 39, 176, 0.1)',
-          fill: true,
-          tension: 0.4,
           borderWidth: 2,
-          pointRadius: 4,
-          pointHoverRadius: 6
+          borderRadius: 4,
+          barThickness: 24,
+          maxBarThickness: 32
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
         plugins: {
           tooltip: {
             mode: 'index',
             intersect: false,
-            padding: 10,
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            padding: 12,
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
             titleColor: '#1a1a1a',
             bodyColor: '#666',
             borderColor: '#e9ecef',
             borderWidth: 1,
             displayColors: false,
+            titleFont: {
+              size: 13,
+              weight: 600
+            },
+            bodyFont: {
+              size: 12
+            },
             callbacks: {
+              title: (items) => {
+                return items[0].label;
+              },
               label: (context) => {
-                return `${this.formatNumber(context.parsed.y)}`;
+                return `${this.metricLabel}: ${this.formatNumber(context.parsed.y)}`;
               }
             }
           },
@@ -106,17 +119,29 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
             grid: {
               display: false
             },
+            border: {
+              display: false
+            },
             ticks: {
-              color: '#666'
+              color: '#666',
+              font: {
+                size: 12
+              }
             }
           },
           y: {
             beginAtZero: true,
+            border: {
+              display: false
+            },
             grid: {
               color: '#e9ecef'
             },
             ticks: {
               color: '#666',
+              font: {
+                size: 12
+              },
               callback: (value) => this.formatNumber(value as number)
             }
           }
@@ -220,6 +245,13 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     
     if (lastWeek === 0) return 0;
     return Math.round(((today - lastWeek) / lastWeek) * 100);
+  }
+
+  getAverageComparison(): number {
+    const average = this.getAverageValue();
+    if (average === 0) return 0;
+    
+    return Math.round(((this.displayValue - average) / average) * 100);
   }
 
   private getLastSevenDays(): string[] {

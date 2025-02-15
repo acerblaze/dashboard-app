@@ -52,91 +52,177 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    flex: 1;
 
     .monthly-progress {
-      background: #f8f9fa;
+      background: white;
       border-radius: 12px;
-      padding: 16px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      padding-bottom: 8px;
 
       .progress-header {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 12px;
 
-        .progress-title {
-          font-size: 16px;
-          font-weight: 500;
-          color: #1a1a1a;
+        .progress-title-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 16px;
+
+          .progress-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
+          }
+
+          .status-badge {
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 12px;
+            background: rgba(25, 118, 210, 0.1);
+            color: #1976d2;
+
+            &.reached {
+              background: rgba(46, 125, 50, 0.1);
+              color: #2e7d32;
+            }
+          }
         }
 
-        .progress-value {
-          font-size: 15px;
-          color: #666;
-        }
-      }
+        .progress-section {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
 
-      .progress-container {
-        height: 8px;
-        background: #e9ecef;
-        border-radius: 4px;
-        overflow: hidden;
+          .values-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
 
-        .progress-bar {
-          height: 100%;
-          background: #1976d2;
-          transition: width 0.3s ease;
+            .current-value, .goal-value {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
 
-          &.reached {
-            background: #2e7d32;
+              .label {
+                font-size: 12px;
+                color: #666;
+              }
+
+              .value {
+                font-size: 16px;
+                font-weight: 600;
+                color: #1a1a1a;
+              }
+            }
+          }
+
+          .progress-container {
+            height: 24px;
+            background: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+
+            .progress-bar {
+              height: 100%;
+              transition: width 0.3s ease;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              position: relative;
+
+              .progress-percentage {
+                color: white;
+                font-size: 12px;
+                font-weight: 600;
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                white-space: nowrap;
+              }
+
+              &.users {
+                background: #1976d2;
+              }
+
+              &.pageviews {
+                background: #9c27b0;
+              }
+
+              &.reached {
+                background: #2e7d32;
+              }
+            }
           }
         }
       }
 
-      .progress-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+      .progress-details {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
 
-        .percentage {
-          font-size: 14px;
-          color: #666;
-        }
+        .detail-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
 
-        .status {
-          font-size: 14px;
-          font-weight: 500;
-          color: #1976d2;
+          .label {
+            font-size: 12px;
+            color: #666;
+          }
 
-          &.reached {
-            color: #2e7d32;
+          .value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1a1a1a;
           }
         }
       }
     }
 
-    .daily-stats {
+    .performance-stats {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 16px;
 
       .stat-card {
-        background: #f8f9fa;
+        background: white;
         border-radius: 12px;
         padding: 16px;
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border: 1px solid #e9ecef;
 
-        .stat-label {
-          font-size: 13px;
-          color: #666;
+        .stat-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          mat-icon {
+            font-size: 18px;
+            width: 18px;
+            height: 18px;
+            color: #666;
+          }
+
+          .stat-label {
+            font-size: 13px;
+            color: #666;
+          }
         }
 
         .stat-value {
-          font-size: 20px;
+          font-size: 24px;
           font-weight: 600;
           color: #1a1a1a;
 
