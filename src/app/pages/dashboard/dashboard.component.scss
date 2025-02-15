@@ -18,6 +18,12 @@
       color: #333;
     }
 
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
     .filters {
       display: flex;
       gap: 16px;

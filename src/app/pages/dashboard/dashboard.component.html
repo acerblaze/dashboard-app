@@ -1,47 +1,27 @@
 <div class="dashboard">
   <header class="dashboard-header">
     <h1>Analytics Dashboard</h1>
-    <div class="filters">
-      <app-device-filter></app-device-filter>
-      <app-day-selector></app-day-selector>
-    </div>
-    <div class="add-widget-dropdown">
-      <button [matMenuTriggerFor]="addWidgetMenu" class="add-widget-btn">
-        <mat-icon>add</mat-icon>
-        <span>Add Widget</span>
-      </button>
-      <mat-menu #addWidgetMenu="matMenu" xPosition="before">
-        <button mat-menu-item [matMenuTriggerFor]="regularWidgetMenu">
-          <mat-icon>widgets</mat-icon>
-          <span>Regular Widget</span>
+    <div class="header-controls">
+      <div class="filters">
+        <app-day-selector></app-day-selector>
+        <app-device-filter></app-device-filter>
+      </div>
+      <div class="add-widget-dropdown">
+        <button [matMenuTriggerFor]="addWidgetMenu" class="add-widget-btn">
+          <mat-icon>add</mat-icon>
+          <span>Add Widget</span>
         </button>
-        <button mat-menu-item [matMenuTriggerFor]="expandedWidgetMenu">
-          <mat-icon>dashboard</mat-icon>
-          <span>Expanded Widget</span>
-        </button>
-      </mat-menu>
-
-      <mat-menu #regularWidgetMenu="matMenu">
-        <button mat-menu-item (click)="addRegularWidget('users')">
-          <mat-icon>group</mat-icon>
-          <span>Users Widget</span>
-        </button>
-        <button mat-menu-item (click)="addRegularWidget('pageViews')">
-          <mat-icon>analytics</mat-icon>
-          <span>Page Views Widget</span>
-        </button>
-      </mat-menu>
-
-      <mat-menu #expandedWidgetMenu="matMenu">
-        <button mat-menu-item (click)="addExpandedWidget('users')">
-          <mat-icon>group</mat-icon>
-          <span>Users Widget</span>
-        </button>
-        <button mat-menu-item (click)="addExpandedWidget('pageViews')">
-          <mat-icon>analytics</mat-icon>
-          <span>Page Views Widget</span>
-        </button>
-      </mat-menu>
+        <mat-menu #addWidgetMenu="matMenu" xPosition="before">
+          <button mat-menu-item (click)="addExpandedWidget('users')">
+            <mat-icon>group</mat-icon>
+            <span>Users Widget</span>
+          </button>
+          <button mat-menu-item (click)="addExpandedWidget('pageViews')">
+            <mat-icon>analytics</mat-icon>
+            <span>Page Views Widget</span>
+          </button>
+        </mat-menu>
+      </div>
     </div>
   </header>
 
