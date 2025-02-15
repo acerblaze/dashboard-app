@@ -18,6 +18,10 @@
         <mat-icon>{{ metricType === 'users' ? 'visibility' : 'group' }}</mat-icon>
         <span>Show {{ metricType === 'users' ? 'Page Views' : 'Users' }}</span>
       </button>
+      <button mat-menu-item (click)="removeWidget()">
+        <mat-icon>delete</mat-icon>
+        <span>Remove Widget</span>
+      </button>
     </mat-menu>
   </div>
 

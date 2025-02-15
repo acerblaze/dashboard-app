@@ -162,6 +162,11 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     this.showMenu = false;
   }
 
+  removeWidget(): void {
+    this.dashboardState.removeExpandedWidget(this.id);
+    this.showMenu = false;
+  }
+
   private updateProgressStatus() {
     const widget = this.dashboardState.getWidget(this.id);
     if (!widget) return;

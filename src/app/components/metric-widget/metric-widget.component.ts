@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, OnDestroy } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, OnDestroy, ErrorHandler } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { DashboardStateService, MetricType } from '../../services/dashboard-state.service';
@@ -7,7 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { BaseMetricWidget } from '../base-metric-widget';
-import { Chart, ChartConfiguration } from 'chart.js';
+import { Chart, ChartConfiguration, ScaleOptionsByType } from 'chart.js';
 import { combineLatest } from 'rxjs';
 
 @Component({
@@ -30,10 +30,11 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
   private resizeObserver: ResizeObserver | null = null;
 
   constructor(
-    dashboardState: DashboardStateService,
-    numberAnimation: NumberAnimationService
+    protected override dashboardState: DashboardStateService,
+    protected override numberAnimation: NumberAnimationService,
+    protected override errorHandler: ErrorHandler
   ) {
-    super(dashboardState, numberAnimation);
+    super(dashboardState, numberAnimation, errorHandler);
   }
 
   override ngOnInit() {
@@ -136,8 +137,24 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
             },
             y: {
               display: false,
-              suggestedMin: 0,
-              grace: '10%'
+              suggestedMin: (context: { chart: Chart }) => {
+                const values = context.chart.data.datasets[0].data as number[];
+                if (values.length === 0) return 0;
+                const min = Math.min(...values);
+                const max = Math.max(...values);
+                // Calculate the range and set minimum closer to the actual minimum
+                const range = max - min;
+                return min - (range * 0.05);
+              },
+              suggestedMax: (context: { chart: Chart }) => {
+                const values = context.chart.data.datasets[0].data as number[];
+                if (values.length === 0) return 100;
+                const min = Math.min(...values);
+                const max = Math.max(...values);
+                // Calculate the range and set maximum closer to the actual maximum
+                const range = max - min;
+                return max + (range * 0.05);
+              }
             }
           },
           interaction: {
@@ -190,6 +207,11 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
 
   override toggleSize(): void {
     this.dashboardState.toggleWidgetSize(this.id);
+    this.showMenu = false;
+  }
+
+  removeWidget(): void {
+    this.dashboardState.removeRegularWidget(this.id);
     this.showMenu = false;
   }
 }
