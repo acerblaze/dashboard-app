@@ -46,56 +46,56 @@
   </header>
 
   <div class="dashboard-content">
-    <!-- Regular Widgets Grid -->
-    <div 
-      id="regular-widgets"
-      class="regular-widgets-container"
-      cdkDropList
-      #regularList="cdkDropList"
-      [cdkDropListData]="regularWidgets"
-      [cdkDropListConnectedTo]="[expandedList]"
-      (cdkDropListDropped)="onDrop($event)"
-    >
-      @for (widget of regularWidgets; track widget.id) {
-        <div 
-          class="widget-wrapper"
-          cdkDrag
-          [cdkDragData]="widget"
-        >
-          <div class="widget-content">
+    <div class="dashboard-grids" cdkDropListGroup>
+      <!-- Regular Widgets Grid -->
+      <div 
+        class="regular-widgets-container"
+        cdkDropList
+        id="regularList"
+        cdkDropListOrientation="mixed"
+        #regularList="cdkDropList"
+        [cdkDropListData]="regularWidgets"
+        (cdkDropListDropped)="onDrop($event)"
+        [cdkDropListEnterPredicate]="canEnterPredicate"
+      >
+        @for (widget of regularWidgets; track widget.id) {
+          <div 
+            class="widget-wrapper"
+            cdkDrag
+            [cdkDragData]="widget"
+          >
             <app-metric-widget
               [id]="widget.id"
               [metricType]="widget.type"
             ></app-metric-widget>
           </div>
-        </div>
-      }
-    </div>
+        }
+      </div>
 
-    <!-- Expanded Widgets Grid -->
-    <div 
-      id="expanded-widgets"
-      class="expanded-widgets-container"
-      cdkDropList
-      #expandedList="cdkDropList"
-      [cdkDropListData]="expandedWidgets"
-      [cdkDropListConnectedTo]="[regularList]"
-      (cdkDropListDropped)="onDrop($event)"
-    >
-      @for (widget of expandedWidgets; track widget.id) {
-        <div 
-          class="widget-wrapper"
-          cdkDrag
-          [cdkDragData]="widget"
-        >
-          <div class="widget-content">
+      <!-- Expanded Widgets Grid -->
+      <div 
+        class="expanded-widgets-container"
+        cdkDropList
+        id="expandedList"
+        cdkDropListOrientation="mixed"
+        #expandedList="cdkDropList"
+        [cdkDropListData]="expandedWidgets"
+        (cdkDropListDropped)="onDrop($event)"
+        [cdkDropListEnterPredicate]="canEnterPredicate"
+      >
+        @for (widget of expandedWidgets; track widget.id) {
+          <div 
+            class="widget-wrapper"
+            cdkDrag
+            [cdkDragData]="widget"
+          >
             <app-expanded-metric-widget
               [id]="widget.id"
               [metricType]="widget.type"
             ></app-expanded-metric-widget>
           </div>
-        </div>
-      }
+        }
+      </div>
     </div>
   </div>
 </div>

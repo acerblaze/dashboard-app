@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem, CdkDrag, CdkDropList } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -78,7 +78,7 @@ export class DashboardComponent implements OnInit {
       // Same container - just reorder
       moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
       
-      if (event.container.id === 'regular-widgets') {
+      if (event.container.data === this.regularWidgets) {
         this.dashboardState.updateRegularWidgetsOrder(this.regularWidgets);
       } else {
         this.dashboardState.updateExpandedWidgetsOrder(this.expandedWidgets);
@@ -87,19 +87,42 @@ export class DashboardComponent implements OnInit {
       // Moving between containers - transfer and change size
       const widget = event.previousContainer.data[event.previousIndex];
       
-      // Remove from source container
-      if (event.previousContainer.id === 'regular-widgets') {
-        this.dashboardState.removeRegularWidget(widget.id);
+      // First move the item to maintain the animation
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex
+      );
+
+      // Then update the state service which will handle the size change
+      if (event.container.id === 'regularList') {
+        // Moving to regular widgets
+        this.dashboardState.updateRegularWidgetsOrder(this.regularWidgets);
+        this.dashboardState.updateExpandedWidgetsOrder(this.expandedWidgets);
       } else {
-        this.dashboardState.removeExpandedWidget(widget.id);
-      }
-      
-      // Add to target container
-      if (event.container.id === 'regular-widgets') {
-        this.dashboardState.addRegularWidget(widget.type);
-      } else {
-        this.dashboardState.addExpandedWidget(widget.type);
+        // Moving to expanded widgets
+        this.dashboardState.updateExpandedWidgetsOrder(this.expandedWidgets);
+        this.dashboardState.updateRegularWidgetsOrder(this.regularWidgets);
       }
     }
+  }
+
+  // This predicate will be called when a drag enters a container
+  canEnterPredicate = (drag: CdkDrag, drop: CdkDropList) => {
+    const draggedWidget = drag.data;
+    const isEnteringRegularList = drop.id === 'regularList';
+    const placeholder = drag.getPlaceholderElement();
+
+    // Update placeholder size based on target container
+    if (isEnteringRegularList) {
+      placeholder.style.width = '300px';
+      placeholder.style.minHeight = '200px';
+    } else {
+      placeholder.style.width = '600px';
+      placeholder.style.minHeight = '400px';
+    }
+
+    return true;
   }
 }

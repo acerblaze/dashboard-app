@@ -57,47 +57,124 @@
     padding: 4px;
     background-color: white;
 
-    .regular-widgets-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    .dashboard-grids {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .regular-widgets-container,
+    .expanded-widgets-container {
+      display: flex;
+      flex-wrap: wrap;
       gap: 24px;
       background-color: white;
       min-height: 100px;
+      padding: 16px;
+      position: relative;
 
-      &.cdk-drop-list-dragging .widget-wrapper:not(.cdk-drag-placeholder) {
-        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      &.cdk-drop-list-dragging {
+        .widget-wrapper:not(.cdk-drag-placeholder) {
+          transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+        }
+      }
+    }
+
+    .regular-widgets-container {
+      .widget-wrapper {
+        width: 300px;
+        height: 200px;
+        flex: none;
+      }
+
+      .cdk-drag-preview {
+        width: 300px !important;
+        height: 200px !important;
+        position: fixed;
+        z-index: 1000;
+        pointer-events: none;
       }
 
       .cdk-drag-placeholder {
-        // Match regular widget size
-        width: 100%;
-        height: 200px; // Adjust this value to match your regular widget height
+        width: 300px !important;
+        height: 200px !important;
+        flex: none !important;
+        position: static;
+        margin: 0;
+        min-height: unset !important;
+        max-height: 200px !important;
       }
     }
 
     .expanded-widgets-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
-      gap: 24px;
-      background-color: white;
-      min-height: 100px;
+      .widget-wrapper {
+        width: 600px;
+        height: 400px;
+        flex: none;
+      }
 
-      &.cdk-drop-list-dragging .widget-wrapper:not(.cdk-drag-placeholder) {
-        transition: transform 250ms cubic-bezier(0, 0, 0.2, 1);
+      .cdk-drag-preview {
+        width: 600px !important;
+        height: 400px !important;
+        position: fixed;
+        z-index: 1000;
+        pointer-events: none;
       }
 
       .cdk-drag-placeholder {
-        // Match expanded widget size
-        width: 100%;
-        height: 400px; // Adjust this value to match your expanded widget height
+        width: 600px !important;
+        height: 400px !important;
+        flex: none !important;
+        position: static;
+        margin: 0;
+        min-height: unset !important;
+        max-height: 400px !important;
       }
+    }
+
+    // Preview styles
+    .regular-preview {
+      width: 300px !important;
+      height: 200px !important;
+      position: fixed;
+      pointer-events: none;
+      box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+                  0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                  0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    }
+
+    .expanded-preview {
+      width: 600px !important;
+      height: 400px !important;
+      position: fixed;
+      pointer-events: none;
+      box-shadow: 0 5px 5px -3px rgba(0, 0, 0, 0.2),
+                  0 8px 10px 1px rgba(0, 0, 0, 0.14),
+                  0 3px 14px 2px rgba(0, 0, 0, 0.12);
+    }
+
+    // Placeholder styles
+    .regular-placeholder {
+      width: 300px !important;
+      height: 200px !important;
+      background: rgba(0, 0, 0, 0.1);
+      border: 2px dashed #ccc;
+      box-shadow: none;
+    }
+
+    .expanded-placeholder {
+      width: 600px !important;
+      height: 400px !important;
+      background: rgba(0, 0, 0, 0.1);
+      border: 2px dashed #ccc;
+      box-shadow: none;
     }
 
     .widget-wrapper {
       background: white;
       border-radius: 8px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
-      transition: box-shadow 0.2s;
+      transition: box-shadow 0.3s cubic-bezier(.25,.8,.25,1);
       cursor: move;
 
       &:hover {
@@ -105,13 +182,14 @@
       }
 
       &.cdk-drag-preview {
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
       }
 
       &.cdk-drag-placeholder {
-        opacity: 0.3;
-        background: #f5f5f5;
-        border: 2px dashed #ccc;
+        opacity: 0.4;
+        background: #ccc;
+        border: 2px dashed #999;
+        box-shadow: none;
       }
 
       &.cdk-drag-animating {
@@ -121,17 +199,6 @@
       .widget-content {
         padding: 16px;
       }
-    }
-  }
-}
-
-// Custom drag preview styles
-.cdk-drag-preview {
-  // Preserve the original dimensions during drag
-  &.widget-wrapper {
-    .widget-content {
-      opacity: 0.9;
-      background: white;
     }
   }
 }
