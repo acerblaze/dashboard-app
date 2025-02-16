@@ -364,28 +364,32 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     if (!widget) return;
 
     try {
-      const metricData = this.dashboardState.getMetricData(widget.type);
-      const deviceType = this.dashboardState.getCurrentDeviceType();
-      const selectedDay = this.dashboardState.getCurrentSelectedDay();
-      
-      // Calculate week-over-week change
-      const weekChange = this.calculateWeekOverWeekChange(metricData, selectedDay, deviceType);
-      if (Math.abs(this.lastWeekComparison - weekChange) > 0.1) {
-        this.numberAnimation.animatePercentage(
+      // Get the last 30 days of data for monthly average
+      const data = this.getMetricDataForComparisons();
+      if (!data.length) return;
+
+      // Week over week comparison
+      const weekChange = this.calculateWeekOverWeekChange(data);
+      // Only animate if there's a significant change
+      if (weekChange !== this.lastWeekComparison) {
+        this.numberAnimation.animateValue(
           this.lastWeekComparison,
           weekChange,
-          (value: number) => this.displayWeekComparison = value
+          (value: number) => this.displayWeekComparison = value,
+          { duration: 500, precision: 1 }
         );
         this.lastWeekComparison = weekChange;
       }
 
-      // Calculate average comparison
-      const avgComparison = this.calculateAverageComparison(metricData, selectedDay, deviceType);
-      if (Math.abs(this.lastAverageComparison - avgComparison) > 0.1) {
-        this.numberAnimation.animatePercentage(
+      // Monthly average comparison
+      const avgComparison = this.calculateMonthlyAverageComparison(data);
+      // Only animate if there's a significant change
+      if (avgComparison !== this.lastAverageComparison) {
+        this.numberAnimation.animateValue(
           this.lastAverageComparison,
           avgComparison,
-          (value: number) => this.displayAverageComparison = value
+          (value: number) => this.displayAverageComparison = value,
+          { duration: 500, precision: 1 }
         );
         this.lastAverageComparison = avgComparison;
       }
@@ -394,41 +398,68 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     }
   }
 
-  private calculateWeekOverWeekChange(metricData: any, selectedDay: string, deviceType: string): number {
-    const selectedDayIndex = metricData.dailyData.findIndex((d: any) => d.date === selectedDay);
-    if (selectedDayIndex < 7) return 0;
-    
-    const selectedDayData = metricData.dailyData[selectedDayIndex];
-    const weekAgoData = metricData.dailyData[selectedDayIndex - 7];
-    
-    if (!selectedDayData || !weekAgoData) return 0;
+  private getMetricDataForComparisons(): number[] {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return [];
 
-    const currentValue = deviceType === 'total' ? selectedDayData.total :
-                        deviceType === 'desktop' ? selectedDayData.desktop : selectedDayData.mobile;
-    const weekAgoValue = deviceType === 'total' ? weekAgoData.total :
-                        deviceType === 'desktop' ? weekAgoData.desktop : weekAgoData.mobile;
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    // Find the index of the selected day
+    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
+    if (selectedDayIndex === -1) return [];
 
-    return weekAgoValue === 0 ? 0 : ((currentValue - weekAgoValue) / weekAgoValue) * 100;
+    // Get up to 30 days of data ending at the selected day
+    const startIndex = Math.max(0, selectedDayIndex - 29);
+    const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
+
+    return relevantDays.map(d => 
+      deviceType === 'total' ? d.total : 
+      deviceType === 'desktop' ? d.desktop : d.mobile
+    );
   }
 
-  private calculateAverageComparison(metricData: any, selectedDay: string, deviceType: string): number {
-    const selectedDayIndex = metricData.dailyData.findIndex((d: any) => d.date === selectedDay);
-    if (selectedDayIndex === -1) return 0;
+  private calculateWeekOverWeekChange(data: number[]): number {
+    // Need at least 8 days of data for week-over-week comparison
+    if (data.length < 8) return 0;
+
+    // Get today's value (last in array)
+    const todayValue = data[data.length - 1];
     
-    const selectedDayData = metricData.dailyData[selectedDayIndex];
-    if (!selectedDayData) return 0;
+    // Calculate average of last 7 days (excluding today)
+    const lastWeekDays = data.slice(-8, -1); // Take 7 days before today
+    const lastWeekAverage = lastWeekDays.reduce((sum, value) => sum + value, 0) / lastWeekDays.length;
 
-    const currentValue = deviceType === 'total' ? selectedDayData.total :
-                        deviceType === 'desktop' ? selectedDayData.desktop : selectedDayData.mobile;
+    if (lastWeekAverage === 0) return 0;
 
-    // Calculate average excluding the current day
-    const otherDays = metricData.dailyData.filter((_: any, index: number) => index !== selectedDayIndex);
-    const average = otherDays.reduce((sum: number, day: any) => {
-      const value = deviceType === 'total' ? day.total :
-                   deviceType === 'desktop' ? day.desktop : day.mobile;
-      return sum + value;
-    }, 0) / otherDays.length;
+    // Calculate percentage change
+    const change = ((todayValue - lastWeekAverage) / lastWeekAverage) * 100;
+    
+    // Return rounded value, handling edge cases
+    if (!isFinite(change)) return 0;
+    return Math.round(change);
+  }
 
-    return average === 0 ? 0 : ((currentValue - average) / average) * 100;
+  private calculateMonthlyAverageComparison(data: number[]): number {
+    // Need at least 2 days of data for comparison
+    if (data.length < 2) return 0;
+
+    // Get today's value (last in array)
+    const todayValue = data[data.length - 1];
+    
+    // Calculate average of all previous days (excluding today)
+    const previousDays = data.slice(0, -1);
+    if (previousDays.length === 0) return 0;
+
+    const monthlyAverage = previousDays.reduce((sum, value) => sum + value, 0) / previousDays.length;
+    if (monthlyAverage === 0) return 0;
+
+    // Calculate percentage difference
+    const change = ((todayValue - monthlyAverage) / monthlyAverage) * 100;
+    
+    // Return rounded value, handling edge cases
+    if (!isFinite(change)) return 0;
+    return Math.round(change);
   }
 }

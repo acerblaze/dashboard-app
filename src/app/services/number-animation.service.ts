@@ -88,13 +88,9 @@ export class NumberAnimationService {
     callback: (value: number) => void,
     options: AnimationOptions = {}
   ): void {
-    // Ensure values are between 0 and 100
-    const clampedStart = Math.max(0, Math.min(100, start));
-    const clampedEnd = Math.max(0, Math.min(100, end));
-    
     this.animateValue(
-      clampedStart,
-      clampedEnd,
+      start,
+      end,
       callback,
       {
         duration: options.duration || 500, // Faster default for percentages
