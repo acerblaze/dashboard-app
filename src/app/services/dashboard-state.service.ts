@@ -13,6 +13,19 @@ export interface WidgetConfig {
   type: MetricType;
 }
 
+// Enhanced type definitions
+export interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+export interface DashboardState {
+  deviceType: DeviceType;
+  selectedDay: string;
+  regularWidgets: WidgetConfig[];
+  expandedWidgets: WidgetConfig[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -44,79 +57,108 @@ export class DashboardStateService {
     this.setupStatePersistence();
   }
 
+  // Enhanced error handling
+  private handleStateError(error: unknown, operation: string): void {
+    console.error(`Error during ${operation}:`, error);
+    // You could also integrate with an error reporting service here
+  }
+
+  // Improved cache management
+  private clearExpiredCache(): void {
+    const now = Date.now();
+    for (const [key, value] of this.metricDataCache.entries()) {
+      if (now - value.timestamp > this.CACHE_TTL) {
+        this.metricDataCache.delete(key);
+      }
+    }
+  }
+
+  // Enhanced state persistence
+  private persistState(): void {
+    try {
+      const state: DashboardState = {
+        deviceType: this.deviceTypeSubject.value,
+        selectedDay: this.selectedDaySubject.value,
+        regularWidgets: this.regularWidgetsSubject.value,
+        expandedWidgets: this.expandedWidgetsSubject.value
+      };
+      localStorage.setItem('dashboardState', JSON.stringify(state));
+    } catch (error) {
+      this.handleStateError(error, 'state persistence');
+    }
+  }
+
   private loadPersistedState(): void {
     try {
       const savedState = localStorage.getItem('dashboardState');
       if (savedState) {
-        const state = JSON.parse(savedState);
-        if (this.isValidPersistedState(state)) {
+        const state: DashboardState = JSON.parse(savedState);
+        if (this.isValidState(state)) {
           this.deviceTypeSubject.next(state.deviceType);
           this.selectedDaySubject.next(state.selectedDay);
           this.regularWidgetsSubject.next(state.regularWidgets);
           this.expandedWidgetsSubject.next(state.expandedWidgets);
-          this.nextWidgetId = state.nextWidgetId;
         }
       }
     } catch (error) {
-      console.error('Error loading persisted state:', error);
+      this.handleStateError(error, 'state loading');
     }
   }
 
-  private isValidPersistedState(state: any): boolean {
+  private isValidState(state: any): state is DashboardState {
     return (
       state &&
       typeof state.deviceType === 'string' &&
+      ['total', 'desktop', 'mobile'].includes(state.deviceType) &&
       typeof state.selectedDay === 'string' &&
       Array.isArray(state.regularWidgets) &&
       Array.isArray(state.expandedWidgets) &&
-      typeof state.nextWidgetId === 'number'
+      state.regularWidgets.every(this.isValidWidgetConfig) &&
+      state.expandedWidgets.every(this.isValidWidgetConfig)
     );
   }
 
-  private setupStatePersistence(): void {
-    combineLatest([
-      this.deviceType$,
-      this.selectedDay$,
-      this.regularWidgets$,
-      this.expandedWidgets$
-    ]).pipe(
-      debounceTime(1000) // Debounce saves to reduce storage operations
-    ).subscribe(() => {
-      this.persistState();
-    });
+  private isValidWidgetConfig(config: any): config is WidgetConfig {
+    return (
+      config &&
+      typeof config.id === 'number' &&
+      typeof config.type === 'string' &&
+      ['users', 'pageViews'].includes(config.type)
+    );
   }
 
-  private persistState(): void {
-    try {
-      const state = {
-        deviceType: this.deviceTypeSubject.value,
-        selectedDay: this.selectedDaySubject.value,
-        regularWidgets: this.regularWidgetsSubject.value,
-        expandedWidgets: this.expandedWidgetsSubject.value,
-        nextWidgetId: this.nextWidgetId
-      };
-      localStorage.setItem('dashboardState', JSON.stringify(state));
-    } catch (error) {
-      console.error('Error persisting state:', error);
-    }
-  }
-
-  // Enhanced metric data retrieval with memoization
+  // Enhanced metric data retrieval with error handling
   getMetricData(type: MetricType): MetricData {
-    const cacheKey = `${type}_${this.deviceTypeSubject.value}_${this.selectedDaySubject.value}`;
-    const cached = this.metricDataCache.get(cacheKey);
-    
-    if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      return cached.data;
+    try {
+      const cacheKey = `${type}_${this.deviceTypeSubject.value}_${this.selectedDaySubject.value}`;
+      const cached = this.metricDataCache.get(cacheKey);
+      
+      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+        return cached.data;
+      }
+
+      // Clear expired cache entries periodically
+      this.clearExpiredCache();
+
+      const data = this.metricsData[type];
+      if (!data) {
+        throw new Error(`No metric data found for type: ${type}`);
+      }
+
+      this.metricDataCache.set(cacheKey, {
+        data,
+        timestamp: Date.now()
+      });
+
+      return data;
+    } catch (error) {
+      this.handleStateError(error, 'metric data retrieval');
+      // Return empty metric data as fallback
+      return {
+        dailyData: [],
+        monthlyTarget: 0
+      };
     }
-
-    const data = this.metricsData[type];
-    this.metricDataCache.set(cacheKey, {
-      data,
-      timestamp: Date.now()
-    });
-
-    return data;
   }
 
   // Optimized widget operations
@@ -268,5 +310,18 @@ export class DashboardStateService {
       this.removeExpandedWidget(widgetId);
       this.addRegularWidget(expandedWidget.type);
     }
+  }
+
+  private setupStatePersistence(): void {
+    combineLatest([
+      this.deviceType$,
+      this.selectedDay$,
+      this.regularWidgets$,
+      this.expandedWidgets$
+    ]).pipe(
+      debounceTime(1000) // Debounce saves to reduce storage operations
+    ).subscribe(() => {
+      this.persistState();
+    });
   }
 }

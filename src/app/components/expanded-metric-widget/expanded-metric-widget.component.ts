@@ -79,111 +79,126 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   }
 
   ngAfterViewInit() {
-    this.initTrendChart();
+    this.initializeChart();
     this.updateChartData();
+    this.resizeChart();
   }
 
-  private initTrendChart() {
+  private initializeChart(): void {
+    if (!this.trendChartCanvas) return;
+
     const ctx = this.trendChartCanvas.nativeElement.getContext('2d');
-    
-    const config: ChartConfiguration = {
-      type: 'bar',
-      data: {
-        labels: this.getLastSevenDays(),
-        datasets: [{
-          label: this.metricLabel,
-          data: [],
-          backgroundColor: this.metricType === 'users' ? 'rgba(25, 118, 210, 0.2)' : 'rgba(156, 39, 176, 0.2)',
-          borderColor: this.metricType === 'users' ? '#1976d2' : '#9c27b0',
-          borderWidth: 2,
-          borderRadius: 4,
-          barThickness: 24,
-          maxBarThickness: 32
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: {
-          mode: 'index',
-          intersect: false
+    if (!ctx) return;
+
+    // Destroy existing chart if it exists
+    if (this.trendChart) {
+      this.trendChart.destroy();
+    }
+
+    // Use requestAnimationFrame for smoother rendering
+    requestAnimationFrame(() => {
+      this.trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            data: [],
+            borderColor: '#4CAF50',
+            tension: 0.4,
+            pointRadius: 0,
+            borderWidth: 2,
+            fill: false
+          }]
         },
-        plugins: {
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            padding: 12,
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            titleColor: '#1a1a1a',
-            bodyColor: '#666',
-            borderColor: '#e9ecef',
-            borderWidth: 1,
-            displayColors: false,
-            titleFont: {
-              size: 13,
-              weight: 600
-            },
-            bodyFont: {
-              size: 12
-            },
-            callbacks: {
-              title: (items) => {
-                return items[0].label;
-              },
-              label: (context) => {
-                return `${this.metricLabel}: ${this.formatNumber(context.parsed.y)}`;
-              }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: {
+            duration: 0 // Disable animations for better performance
+          },
+          plugins: {
+            legend: {
+              display: false
             }
           },
-          legend: {
-            display: false
-          }
-        },
-        scales: {
-          x: {
-            grid: {
-              display: false
-            },
-            border: {
-              display: false
-            },
-            ticks: {
-              color: '#666',
-              font: {
-                size: 12
+          scales: {
+            x: {
+              display: true,
+              grid: {
+                display: false
               }
-            }
-          },
-          y: {
-            beginAtZero: true,
-            border: {
-              display: false
             },
-            grid: {
-              color: '#e9ecef'
-            },
-            ticks: {
-              color: '#666',
-              font: {
-                size: 12
-              },
-              callback: (value) => this.formatNumber(value as number)
+            y: {
+              display: true,
+              beginAtZero: true,
+              grid: {
+                color: 'rgba(0, 0, 0, 0.1)'
+              }
             }
           }
         }
-      }
-    };
-
-    this.trendChart = new Chart(ctx, config);
+      });
+    });
   }
 
-  private updateChartData() {
+  private updateChartData(): void {
     if (!this.trendChart) return;
-    
-    const data = this.getLastSevenDaysData();
-    this.trendChart.data.labels = this.getLastSevenDays();
-    this.trendChart.data.datasets[0].data = data;
-    this.trendChart.update();
+
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+
+    try {
+      const metricData = this.dashboardState.getMetricData(widget.type);
+      const deviceType = this.dashboardState.getCurrentDeviceType();
+      const selectedDay = this.dashboardState.getCurrentSelectedDay();
+
+      const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
+      if (selectedDayIndex === -1) return;
+
+      // Get 7 days of data ending at the selected day
+      const startIndex = Math.max(0, selectedDayIndex - 6);
+      const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
+
+      // Prepare data outside of animation frame
+      const labels = relevantDays.map(d => {
+        const date = new Date(d.date);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      });
+
+      const data = relevantDays.map(d => 
+        deviceType === 'total' ? d.total :
+        deviceType === 'desktop' ? d.desktop : d.mobile
+      );
+
+      // Use requestAnimationFrame for smoother updates
+      requestAnimationFrame(() => {
+        this.trendChart!.data.labels = labels;
+        this.trendChart!.data.datasets[0].data = data;
+        this.trendChart!.update('none'); // Use 'none' mode for better performance
+      });
+    } catch (error) {
+      console.error('Error updating chart:', error);
+    }
+  }
+
+  // Add resize observer for responsive charts
+  private resizeChart(): void {
+    if (this.trendChartCanvas?.nativeElement) {
+      const resizeObserver = new ResizeObserver(() => {
+        requestAnimationFrame(() => {
+          if (this.trendChart) {
+            this.trendChart.resize();
+          }
+        });
+      });
+
+      resizeObserver.observe(this.trendChartCanvas.nativeElement);
+
+      // Clean up observer on destroy
+      this.subscriptions.add({
+        unsubscribe: () => resizeObserver.disconnect()
+      });
+    }
   }
 
   getMonthlyTarget(): number {
