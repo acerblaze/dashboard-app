@@ -355,6 +355,8 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     super.calculateMetrics();
     this.updateChartData();
     this.updateComparisonMetrics();
+    this.updateProgressStatus();
+    this.actualProgressPercentage = this.progressPercentage;
   }
 
   private updateComparisonMetrics(): void {
@@ -393,13 +395,13 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   }
 
   private calculateWeekOverWeekChange(metricData: any, selectedDay: string, deviceType: string): number {
-    const selectedDayData = metricData.dailyData.find((d: any) => d.date === selectedDay);
-    const weekAgoIndex = metricData.dailyData.findIndex((d: any) => d.date === selectedDay) - 7;
+    const selectedDayIndex = metricData.dailyData.findIndex((d: any) => d.date === selectedDay);
+    if (selectedDayIndex < 7) return 0;
     
-    if (!selectedDayData || weekAgoIndex < 0) return 0;
+    const selectedDayData = metricData.dailyData[selectedDayIndex];
+    const weekAgoData = metricData.dailyData[selectedDayIndex - 7];
     
-    const weekAgoData = metricData.dailyData[weekAgoIndex];
-    if (!weekAgoData) return 0;
+    if (!selectedDayData || !weekAgoData) return 0;
 
     const currentValue = deviceType === 'total' ? selectedDayData.total :
                         deviceType === 'desktop' ? selectedDayData.desktop : selectedDayData.mobile;
@@ -410,17 +412,22 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   }
 
   private calculateAverageComparison(metricData: any, selectedDay: string, deviceType: string): number {
-    const selectedDayData = metricData.dailyData.find((d: any) => d.date === selectedDay);
+    const selectedDayIndex = metricData.dailyData.findIndex((d: any) => d.date === selectedDay);
+    if (selectedDayIndex === -1) return 0;
+    
+    const selectedDayData = metricData.dailyData[selectedDayIndex];
     if (!selectedDayData) return 0;
 
     const currentValue = deviceType === 'total' ? selectedDayData.total :
                         deviceType === 'desktop' ? selectedDayData.desktop : selectedDayData.mobile;
 
-    const average = metricData.dailyData.reduce((sum: number, day: any) => {
+    // Calculate average excluding the current day
+    const otherDays = metricData.dailyData.filter((_: any, index: number) => index !== selectedDayIndex);
+    const average = otherDays.reduce((sum: number, day: any) => {
       const value = deviceType === 'total' ? day.total :
                    deviceType === 'desktop' ? day.desktop : day.mobile;
       return sum + value;
-    }, 0) / metricData.dailyData.length;
+    }, 0) / otherDays.length;
 
     return average === 0 ? 0 : ((currentValue - average) / average) * 100;
   }

@@ -86,8 +86,11 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
           backgroundColor: `${chartColor.split(')')[0]} / 0.1)`,
           tension: 0.4,
           borderWidth: 1.5,
-          pointRadius: 0,
-          pointHoverRadius: 0
+          pointRadius: 2,
+          pointHoverRadius: 4,
+          pointBackgroundColor: chartColor,
+          pointBorderColor: 'white',
+          pointBorderWidth: 1
         }]
       },
       options: {
@@ -98,7 +101,19 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
             display: false
           },
           tooltip: {
-            enabled: false
+            enabled: true,
+            mode: 'index',
+            intersect: false,
+            backgroundColor: 'hsl(0 0% 100%)',
+            titleColor: 'hsl(240 5.9% 10%)',
+            bodyColor: 'hsl(240 3.8% 46.1%)',
+            borderColor: 'hsl(240 5.9% 90%)',
+            borderWidth: 1,
+            padding: 8,
+            displayColors: false,
+            callbacks: {
+              label: (context) => `${context.raw}`
+            }
           }
         },
         scales: {
