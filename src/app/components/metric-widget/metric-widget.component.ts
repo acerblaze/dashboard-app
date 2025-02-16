@@ -27,6 +27,7 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
   @ViewChild('sparklineChart') sparklineChartCanvas!: ElementRef;
   private chart: Chart | null = null;
   private resizeObserver: ResizeObserver | null = null;
+  isTargetReached: boolean = false;
 
   constructor(
     protected override dashboardState: DashboardStateService,
@@ -81,11 +82,11 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
         datasets: [{
           label: this.metricLabel,
           data: [],
-          fill: true,
+          fill: false,
           borderColor: chartColor,
           backgroundColor: `${chartColor.split(')')[0]} / 0.1)`,
           tension: 0.4,
-          borderWidth: 1.5,
+          borderWidth: 2,
           pointRadius: 2,
           pointHoverRadius: 4,
           pointBackgroundColor: chartColor,
@@ -221,5 +222,25 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
   protected override calculateMetrics(): void {
     super.calculateMetrics();
     this.updateChartData();
+    this.updateTargetStatus();
+  }
+
+  private updateTargetStatus(): void {
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    const cumulativeValue = metricData.dailyData
+      .filter(d => d.date <= selectedDay)
+      .reduce((sum, day) => {
+        const value = deviceType === 'total' ? day.total :
+                     deviceType === 'desktop' ? day.desktop : day.mobile;
+        return sum + value;
+      }, 0);
+
+    this.isTargetReached = (cumulativeValue / metricData.monthlyTarget) * 100 >= 100;
   }
 }

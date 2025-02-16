@@ -87,15 +87,10 @@ export class DashboardComponent implements OnInit {
       // Moving between containers - transfer and change size
       const widget = event.previousContainer.data[event.previousIndex];
       
-      // First move the item to maintain the animation
-      transferArrayItem(
-        event.previousContainer.data,
-        event.container.data,
-        event.previousIndex,
-        event.currentIndex
-      );
-
-      // Then update the state service which will handle the size change
+      // Toggle the widget size first
+      this.dashboardState.toggleWidgetSize(widget.id);
+      
+      // Then update the orders
       if (event.container.id === 'regularList') {
         // Moving to regular widgets
         this.dashboardState.updateRegularWidgetsOrder(this.regularWidgets);

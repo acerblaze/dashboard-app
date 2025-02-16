@@ -1,13 +1,83 @@
 <div class="metric-details">
   <header class="details-header">
-    <button class="back-button" routerLink="/dashboard">
-      <span class="icon">←</span>
-      Back to Dashboard
-    </button>
-    <h1>Metric Details</h1>
+    <div class="header-left">
+      <button class="back-button" routerLink="/dashboard">
+        <span class="icon">←</span>
+        Back to Dashboard
+      </button>
+    </div>
+    <div class="header-right">
+      <app-day-selector></app-day-selector>
+    </div>
   </header>
 
   <div class="details-content">
-    <!-- Metric details content will go here -->
+    <div class="top-grid">
+      <!-- Extended Widget -->
+      <div class="chart-section extended-widget">
+        <h2>{{ getMetricName() }}</h2>
+        <div class="metric-summary">
+          <div class="current-value">
+            <span class="value">{{ displayValue }}</span>
+            <span class="label">Current Value</span>
+          </div>
+          <div class="comparison">
+            <div class="week-comparison">
+              <span class="value" [class.positive]="displayWeekComparison > 0" [class.negative]="displayWeekComparison < 0">
+                {{ displayWeekComparison > 0 ? '+' : '' }}{{ displayWeekComparison }}%
+              </span>
+              <span class="label">vs Last Week</span>
+            </div>
+            <div class="average-comparison">
+              <span class="value" [class.positive]="displayAverageComparison > 0" [class.negative]="displayAverageComparison < 0">
+                {{ displayAverageComparison > 0 ? '+' : '' }}{{ displayAverageComparison }}%
+              </span>
+              <span class="label">vs Monthly Average</span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-stats">
+          <div class="stat-card">
+            <span class="label">Monthly Target</span>
+            <span class="value">{{ getMonthlyTarget() | number }}</span>
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress" 
+                     [class.users]="getMetricName() === 'Active Users'"
+                     [class.pageviews]="getMetricName() === 'Page Views'"
+                     [class.target-reached]="isTargetReached"
+                     [style.width.%]="actualProgressPercentage"></div>
+              </div>
+              <span class="progress-label">{{ actualProgressPercentage | number:'1.0-0' }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Device Distribution -->
+      <div class="chart-section device-distribution">
+        <h2>Device Distribution</h2>
+        <div class="chart-container">
+          <canvas #secondaryChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- 30-Day Trend -->
+    <div class="chart-section trend-chart">
+      <h2>30-Day Trend</h2>
+      <div class="chart-container">
+        <canvas #mainChart></canvas>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-section">
+        <h2>Day of Week Pattern</h2>
+        <div class="chart-container">
+          <canvas #tertiaryChart></canvas>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

@@ -1,52 +1,229 @@
 .metric-details {
-  padding: 2rem;
+  padding: 24px;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 24px;
+  background-color: hsl(0 0% 98%);
 
   .details-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    
+    .header-left {
+      .back-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: none;
+        border: none;
+        color: hsl(240 3.8% 46.1%);
+        font-size: 14px;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 6px;
+        transition: background-color 0.2s;
 
-    .back-button {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.5rem 1rem;
-      background-color: transparent;
-      color: #007bff;
-      border: 1px solid #007bff;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: all 0.2s;
+        &:hover {
+          background-color: hsl(240 5.9% 90% / 0.3);
+        }
 
-      .icon {
-        font-size: 1.2rem;
-        line-height: 1;
-      }
-
-      &:hover {
-        background-color: #007bff;
-        color: white;
-      }
-
-      &:focus {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        .icon {
+          font-size: 18px;
+        }
       }
     }
 
-    h1 {
-      margin: 0;
-      font-size: 2rem;
-      color: #333;
+    .header-right {
+      display: flex;
+      align-items: center;
     }
   }
 
   .details-content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      height: 400px;
+    }
+
+    .chart-section {
+      background-color: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px hsla(0 0% 0% / 0.1);
+      height: 100%;
+
+      h2 {
+        margin: 0 0 1.5rem;
+        font-size: 1.25rem;
+        color: hsl(240 5.9% 10%);
+      }
+
+      &.extended-widget {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+
+        .metric-summary {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+
+          .current-value {
+            .value {
+              display: block;
+              font-size: 2.5rem;
+              font-weight: 600;
+              color: hsl(240 5.9% 10%);
+              line-height: 1.2;
+            }
+
+            .label {
+              color: hsl(240 3.8% 46.1%);
+              font-size: 0.875rem;
+            }
+          }
+
+          .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+
+            .week-comparison,
+            .average-comparison {
+              .value {
+                display: block;
+                font-size: 1.5rem;
+                font-weight: 600;
+                line-height: 1.2;
+
+                &.positive {
+                  color: hsl(142.1 76.2% 36.3%);
+                }
+
+                &.negative {
+                  color: hsl(0 84.2% 60.2%);
+                }
+              }
+
+              .label {
+                color: hsl(240 3.8% 46.1%);
+                font-size: 0.875rem;
+              }
+            }
+          }
+        }
+
+        .metric-stats {
+          margin-top: auto;
+
+          .stat-card {
+            .label {
+              display: block;
+              color: hsl(240 3.8% 46.1%);
+              font-size: 0.875rem;
+              margin-bottom: 0.5rem;
+            }
+
+            .value {
+              display: block;
+              font-size: 1.5rem;
+              font-weight: 600;
+              color: hsl(240 5.9% 10%);
+              margin-bottom: 1rem;
+            }
+
+            .progress-container {
+              display: flex;
+              align-items: center;
+              gap: 1rem;
+
+              .progress-bar {
+                flex: 1;
+                height: 8px;
+                background-color: hsl(240 5.9% 90%);
+                border-radius: 4px;
+                overflow: hidden;
+
+                .progress {
+                  height: 100%;
+                  border-radius: 4px;
+                  transition: width 0.3s ease;
+
+                  &.users {
+                    background-color: hsl(217.2 91.2% 59.8%);
+                  }
+
+                  &.pageviews {
+                    background-color: hsl(270 91.2% 59.8%);
+                  }
+
+                  &.target-reached {
+                    &.users {
+                      background-color: hsl(217.2 91.2% 59.8%);
+                    }
+                    &.pageviews {
+                      background-color: hsl(270 91.2% 59.8%);
+                    }
+                  }
+                }
+              }
+
+              .progress-label {
+                font-size: 0.875rem;
+                font-weight: 500;
+                color: hsl(240 3.8% 46.1%);
+                min-width: 3.5rem;
+                text-align: right;
+              }
+            }
+          }
+        }
+      }
+
+      &.device-distribution {
+        display: flex;
+        flex-direction: column;
+
+        .chart-container {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: auto;
+          min-height: 0;
+        }
+      }
+
+      &.trend-chart {
+        .chart-container {
+          height: 400px;
+        }
+      }
+
+      .chart-container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    .charts-grid {
+      .chart-section {
+        height: 400px;
+
+        .chart-container {
+          height: calc(100% - 3rem);
+        }
+      }
+    }
   }
 }

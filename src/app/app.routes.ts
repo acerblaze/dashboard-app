@@ -14,7 +14,7 @@ export const routes: Routes = [
     title: 'Analytics Dashboard'
   },
   {
-    path: 'metric/:type',
+    path: 'metric/:id',
     component: MetricDetailsComponent,
     title: 'Metric Details'
   }
