@@ -1,0 +1,8 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist/dashboard-app",
+    "framework": "angular",
+    "buildConfiguration": {
+      "nodeVersion": "18.19.1"
+    }
+  }
