@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
-import { map, debounceTime } from 'rxjs/operators';
+import { map, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { mockMetricsData } from '../data/mock-metrics';
 import { MetricData } from '../data/mock-metrics';
 
@@ -17,6 +17,7 @@ export interface WidgetConfig {
 export interface CacheEntry<T> {
   data: T;
   timestamp: number;
+  expiresAt: number;
 }
 
 export interface DashboardState {
@@ -31,35 +32,42 @@ export interface DashboardState {
 })
 export class DashboardStateService {
   private readonly deviceTypeSubject = new BehaviorSubject<DeviceType>('total');
-  readonly deviceType$ = this.deviceTypeSubject.asObservable();
+  readonly deviceType$ = this.deviceTypeSubject.pipe(distinctUntilChanged());
 
   private readonly selectedDaySubject = new BehaviorSubject<string>('2025-02-28');
-  readonly selectedDay$ = this.selectedDaySubject.asObservable();
+  readonly selectedDay$ = this.selectedDaySubject.pipe(distinctUntilChanged());
 
   private readonly regularWidgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
-  readonly regularWidgets$ = this.regularWidgetsSubject.asObservable();
+  readonly regularWidgets$ = this.regularWidgetsSubject.pipe(
+    distinctUntilChanged((prev, curr) => this.areWidgetsEqual(prev, curr))
+  );
 
   private readonly expandedWidgetsSubject = new BehaviorSubject<WidgetConfig[]>([]);
-  readonly expandedWidgets$ = this.expandedWidgetsSubject.asObservable();
+  readonly expandedWidgets$ = this.expandedWidgetsSubject.pipe(
+    distinctUntilChanged((prev, curr) => this.areWidgetsEqual(prev, curr))
+  );
 
   // Store metric data
   private readonly metricsData = mockMetricsData;
   private nextWidgetId = 1;
 
   // Memoization cache
-  private metricDataCache = new Map<string, any>();
+  private readonly metricDataCache = new Map<string, CacheEntry<MetricData>>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  private readonly CACHE_CLEANUP_INTERVAL = 60 * 1000; // 1 minute
 
   constructor() {
     // Initialize persistence
     this.loadPersistedState();
     // Set up auto-save
     this.setupStatePersistence();
+    this.setupCacheCleanup();
   }
 
   // Enhanced error handling
   private handleStateError(error: unknown, operation: string): void {
-    console.error(`Error during ${operation}:`, error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Error during ${operation}:`, errorMessage);
     // You could also integrate with an error reporting service here
   }
 
@@ -67,7 +75,7 @@ export class DashboardStateService {
   private clearExpiredCache(): void {
     const now = Date.now();
     for (const [key, value] of this.metricDataCache.entries()) {
-      if (now - value.timestamp > this.CACHE_TTL) {
+      if (now >= value.expiresAt) {
         this.metricDataCache.delete(key);
       }
     }
@@ -98,10 +106,20 @@ export class DashboardStateService {
           this.selectedDaySubject.next(state.selectedDay);
           this.regularWidgetsSubject.next(state.regularWidgets);
           this.expandedWidgetsSubject.next(state.expandedWidgets);
+          // Update nextWidgetId based on existing widgets
+          this.updateNextWidgetId(state);
         }
       }
     } catch (error) {
       this.handleStateError(error, 'state loading');
+    }
+  }
+
+  private updateNextWidgetId(state: DashboardState): void {
+    const allWidgets = [...state.regularWidgets, ...state.expandedWidgets];
+    if (allWidgets.length > 0) {
+      const maxId = Math.max(...allWidgets.map(w => w.id));
+      this.nextWidgetId = maxId + 1;
     }
   }
 
@@ -132,13 +150,11 @@ export class DashboardStateService {
     try {
       const cacheKey = `${type}_${this.deviceTypeSubject.value}_${this.selectedDaySubject.value}`;
       const cached = this.metricDataCache.get(cacheKey);
+      const now = Date.now();
       
-      if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
+      if (cached && now < cached.expiresAt) {
         return cached.data;
       }
-
-      // Clear expired cache entries periodically
-      this.clearExpiredCache();
 
       const data = this.metricsData[type];
       if (!data) {
@@ -147,7 +163,8 @@ export class DashboardStateService {
 
       this.metricDataCache.set(cacheKey, {
         data,
-        timestamp: Date.now()
+        timestamp: now,
+        expiresAt: now + this.CACHE_TTL
       });
 
       return data;
@@ -226,7 +243,9 @@ export class DashboardStateService {
   }
 
   setDeviceType(type: DeviceType): void {
-    this.deviceTypeSubject.next(type);
+    if (type !== this.deviceTypeSubject.value) {
+      this.deviceTypeSubject.next(type);
+    }
   }
 
   getCurrentDeviceType(): DeviceType {
@@ -234,7 +253,9 @@ export class DashboardStateService {
   }
 
   setSelectedDay(date: string): void {
-    this.selectedDaySubject.next(date);
+    if (date !== this.selectedDaySubject.value) {
+      this.selectedDaySubject.next(date);
+    }
   }
 
   getCurrentSelectedDay(): string {
@@ -255,60 +276,56 @@ export class DashboardStateService {
   }
 
   removeRegularWidget(id: number): void {
-    const widgets = this.regularWidgetsSubject.value;
-    const index = widgets.findIndex(w => w.id === id);
-    if (index !== -1) {
-      widgets.splice(index, 1);
-      this.regularWidgetsSubject.next([...widgets]);
-    }
+    this.updateWidgets(this.regularWidgetsSubject, widgets => 
+      widgets.filter(widget => widget.id !== id)
+    );
   }
 
   removeExpandedWidget(id: number): void {
-    const widgets = this.expandedWidgetsSubject.value;
-    const index = widgets.findIndex(w => w.id === id);
-    if (index !== -1) {
-      widgets.splice(index, 1);
-      this.expandedWidgetsSubject.next([...widgets]);
-    }
+    this.updateWidgets(this.expandedWidgetsSubject, widgets => 
+      widgets.filter(widget => widget.id !== id)
+    );
   }
 
   updateWidgetType(widgetId: number, type: MetricType): void {
-    // Check in regular widgets first
-    const regularWidgets = this.regularWidgetsSubject.value;
-    const regularWidget = regularWidgets.find(w => w.id === widgetId);
+    const regularWidget = this.regularWidgetsSubject.value.find(w => w.id === widgetId);
     if (regularWidget) {
-      regularWidget.type = type;
-      this.regularWidgetsSubject.next([...regularWidgets]);
+      this.updateWidgets(this.regularWidgetsSubject, widgets =>
+        widgets.map(w => w.id === widgetId ? { ...w, type } : w)
+      );
       return;
     }
 
-    // If not found in regular widgets, check expanded widgets
-    const expandedWidgets = this.expandedWidgetsSubject.value;
-    const expandedWidget = expandedWidgets.find(w => w.id === widgetId);
+    const expandedWidget = this.expandedWidgetsSubject.value.find(w => w.id === widgetId);
     if (expandedWidget) {
-      expandedWidget.type = type;
-      this.expandedWidgetsSubject.next([...expandedWidgets]);
+      this.updateWidgets(this.expandedWidgetsSubject, widgets =>
+        widgets.map(w => w.id === widgetId ? { ...w, type } : w)
+      );
     }
   }
 
   toggleWidgetSize(widgetId: number): void {
-    // Check if it's a regular widget
-    const regularWidgets = this.regularWidgetsSubject.value;
-    const regularWidget = regularWidgets.find(w => w.id === widgetId);
+    const regularWidget = this.regularWidgetsSubject.value.find(w => w.id === widgetId);
     if (regularWidget) {
-      // Move from regular to expanded
-      this.removeRegularWidget(widgetId);
-      this.addExpandedWidget(regularWidget.type);
+      this.updateWidgets(this.regularWidgetsSubject, widgets =>
+        widgets.filter(w => w.id !== widgetId)
+      );
+      this.updateWidgets(this.expandedWidgetsSubject, widgets => [
+        ...widgets,
+        regularWidget
+      ]);
       return;
     }
 
-    // Check if it's an expanded widget
-    const expandedWidgets = this.expandedWidgetsSubject.value;
-    const expandedWidget = expandedWidgets.find(w => w.id === widgetId);
+    const expandedWidget = this.expandedWidgetsSubject.value.find(w => w.id === widgetId);
     if (expandedWidget) {
-      // Move from expanded to regular
-      this.removeExpandedWidget(widgetId);
-      this.addRegularWidget(expandedWidget.type);
+      this.updateWidgets(this.expandedWidgetsSubject, widgets =>
+        widgets.filter(w => w.id !== widgetId)
+      );
+      this.updateWidgets(this.regularWidgetsSubject, widgets => [
+        ...widgets,
+        expandedWidget
+      ]);
     }
   }
 
@@ -319,9 +336,13 @@ export class DashboardStateService {
       this.regularWidgets$,
       this.expandedWidgets$
     ]).pipe(
-      debounceTime(1000) // Debounce saves to reduce storage operations
+      debounceTime(300)
     ).subscribe(() => {
       this.persistState();
     });
+  }
+
+  private setupCacheCleanup(): void {
+    setInterval(() => this.clearExpiredCache(), this.CACHE_CLEANUP_INTERVAL);
   }
 }
