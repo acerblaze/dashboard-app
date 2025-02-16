@@ -44,7 +44,7 @@ export const mockMetricsData: Metrics = {
       { date: "2025-02-22", total: 612, desktop: 398, mobile: 214 },
       { date: "2025-02-23", total: 578, desktop: 379, mobile: 199 },
       { date: "2025-02-24", total: 543, desktop: 358, mobile: 185 },
-      { date: "2025-02-25", total: 567, desktop: 371, mobile: 196 },
+      { date: "2025-02-25", total: 320, desktop: 210, mobile: 110 },
       { date: "2025-02-26", total: 598, desktop: 387, mobile: 211 },
       { date: "2025-02-27", total: 623, desktop: 408, mobile: 215 },
       { date: "2025-02-28", total: 647, desktop: 423, mobile: 224 }
@@ -79,7 +79,7 @@ export const mockMetricsData: Metrics = {
       { date: "2025-02-22", total: 5890, desktop: 3652, mobile: 2238 },
       { date: "2025-02-23", total: 5567, desktop: 3452, mobile: 2115 },
       { date: "2025-02-24", total: 5234, desktop: 3245, mobile: 1989 },
-      { date: "2025-02-25", total: 5456, desktop: 3383, mobile: 2073 },
+      { date: "2025-02-25", total: 3200, desktop: 1980, mobile: 1220 },
       { date: "2025-02-26", total: 5789, desktop: 3589, mobile: 2200 },
       { date: "2025-02-27", total: 6012, desktop: 3727, mobile: 2285 },
       { date: "2025-02-28", total: 6234, desktop: 3865, mobile: 2369 }

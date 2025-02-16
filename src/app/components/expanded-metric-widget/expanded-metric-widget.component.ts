@@ -368,6 +368,16 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
       const data = this.getMetricDataForComparisons();
       if (!data.length) return;
 
+      console.log('Comparison data:', {
+        type: widget.type,
+        data: data,
+        today: data[data.length - 1],
+        lastWeek: data[data.length - 8],
+        weekChange: this.calculateWeekOverWeekChange(data),
+        monthlyAvg: data.slice(0, -1).reduce((sum, value) => sum + value, 0) / (data.length - 1),
+        monthlyChange: this.calculateMonthlyAverageComparison(data)
+      });
+
       // Week over week comparison
       const weekChange = this.calculateWeekOverWeekChange(data);
       // Only animate if there's a significant change
@@ -427,14 +437,12 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     // Get today's value (last in array)
     const todayValue = data[data.length - 1];
     
-    // Calculate average of last 7 days (excluding today)
-    const lastWeekDays = data.slice(-8, -1); // Take 7 days before today
-    const lastWeekAverage = lastWeekDays.reduce((sum, value) => sum + value, 0) / lastWeekDays.length;
-
-    if (lastWeekAverage === 0) return 0;
+    // Get the value from exactly 7 days ago
+    const lastWeekValue = data[data.length - 8];
+    if (lastWeekValue === 0) return 0;
 
     // Calculate percentage change
-    const change = ((todayValue - lastWeekAverage) / lastWeekAverage) * 100;
+    const change = ((todayValue - lastWeekValue) / lastWeekValue) * 100;
     
     // Return rounded value, handling edge cases
     if (!isFinite(change)) return 0;
@@ -452,6 +460,7 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     const previousDays = data.slice(0, -1);
     if (previousDays.length === 0) return 0;
 
+    // Calculate average, handling potential zero values
     const monthlyAverage = previousDays.reduce((sum, value) => sum + value, 0) / previousDays.length;
     if (monthlyAverage === 0) return 0;
 
