@@ -39,6 +39,7 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
 
   isTargetReached: boolean = false;
   actualProgressPercentage: number = 0;
+  override displayCumulativeValue: number = 0;
 
   // Display properties for animated values
   private lastAverageComparison: number = 0;
@@ -446,6 +447,22 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
     this.updateComparisonMetrics();
     this.updateProgressStatus();
     this.actualProgressPercentage = this.progressPercentage;
+
+    // Calculate cumulative value
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    this.displayCumulativeValue = metricData.dailyData
+      .filter(d => d.date <= selectedDay)
+      .reduce((sum, day) => {
+        const value = deviceType === 'total' ? day.total :
+                     deviceType === 'desktop' ? day.desktop : day.mobile;
+        return sum + value;
+      }, 0);
   }
 
   private updateProgressStatus() {

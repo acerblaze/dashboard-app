@@ -15,40 +15,69 @@
     <div class="top-grid">
       <!-- Extended Widget -->
       <div class="chart-section extended-widget">
-        <h2>{{ getMetricName() }}</h2>
-        <div class="metric-summary">
-          <div class="current-value">
-            <span class="value">{{ displayValue }}</span>
-            <span class="label">Today</span>
-          </div>
-          <div class="comparison">
-            <div class="week-comparison">
-              <span class="value" [class.positive]="displayWeekComparison > 0" [class.negative]="displayWeekComparison < 0">
-                {{ displayWeekComparison > 0 ? '+' : '' }}{{ displayWeekComparison }}%
-              </span>
-              <span class="label">vs Last Week</span>
-            </div>
-            <div class="average-comparison">
-              <span class="value" [class.positive]="displayAverageComparison > 0" [class.negative]="displayAverageComparison < 0">
-                {{ displayAverageComparison > 0 ? '+' : '' }}{{ displayAverageComparison }}%
-              </span>
-              <span class="label">vs Monthly Average</span>
+        <div class="widget-header">
+          <div class="title-section">
+            <h3>{{ getMetricName() }}</h3>
+            <div class="metric-value-section">
+              <div class="today-value">{{ formatNumber(displayValue) }}</div>
+              <span class="today-label">Today</span>
             </div>
           </div>
         </div>
-        <div class="metric-stats">
-          <div class="stat-card">
-            <span class="label">Monthly Goal</span>
-            <span class="value">{{ getMonthlyTarget() | number }}</span>
-            <div class="progress-container">
-              <div class="progress-bar">
-                <div class="progress" 
-                     [class.users]="getMetricName() === 'Active Users'"
-                     [class.pageviews]="getMetricName() === 'Page Views'"
-                     [class.target-reached]="isTargetReached"
-                     [style.width.%]="actualProgressPercentage"></div>
+
+        <div class="widget-content">
+          <!-- Progress Section -->
+          <div class="monthly-progress" [class.reached]="isTargetReached">
+            <div class="progress-header">
+              <div class="progress-title-row">
+                <span class="progress-title">Monthly Goal Progress</span>
+                <span class="status-badge" [class.reached]="isTargetReached">
+                  {{ isTargetReached ? 'Goal Reached' : 'In Progress' }}
+                </span>
               </div>
-              <span class="progress-label">{{ actualProgressPercentage | number:'1.0-0' }}%</span>
+              <div class="progress-section">
+                <div class="values-row">
+                  <div class="current-value">
+                    <span class="label">Current</span>
+                    <span class="value">{{ formatNumber(displayCumulativeValue) }}</span>
+                  </div>
+                  <div class="goal-value">
+                    <span class="label">Goal</span>
+                    <span class="value">{{ formatNumber(getMonthlyTarget()) }}</span>
+                  </div>
+                </div>
+                <div class="progress-container">
+                  <div class="progress-bar" 
+                       [style.width.%]="progressPercentage > 100 ? 100 : progressPercentage"
+                       [class.users]="getMetricName() === 'Active Users'"
+                       [class.pageviews]="getMetricName() === 'Page Views'"
+                       [class.completed]="progressPercentage >= 100">
+                    <span class="progress-percentage">{{ actualProgressPercentage | number:'1.0-0' }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Performance Stats -->
+          <div class="performance-stats">
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">vs. Monthly Average</span>
+                <mat-icon>analytics</mat-icon>
+              </div>
+              <span class="stat-value" [class.positive]="displayAverageComparison > 0" [class.negative]="displayAverageComparison < 0">
+                {{ displayAverageComparison > 0 ? '+' : '' }}{{ displayAverageComparison | number:'1.0-0' }}%
+              </span>
+            </div>
+            <div class="stat-card">
+              <div class="stat-header">
+                <span class="stat-label">vs. Last Week</span>
+                <mat-icon>date_range</mat-icon>
+              </div>
+              <span class="stat-value" [class.positive]="displayWeekComparison > 0" [class.negative]="displayWeekComparison < 0">
+                {{ displayWeekComparison > 0 ? '+' : '' }}{{ displayWeekComparison | number:'1.0-0' }}%
+              </span>
             </div>
           </div>
         </div>
