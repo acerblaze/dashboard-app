@@ -9,6 +9,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { BaseMetricWidget } from '../base-metric-widget';
 import { Chart } from 'chart.js';
 import { ChartService } from '../../services/chart.service';
+import { MetricCalculationService } from '../../services/metric-calculation.service';
 
 @Component({
   selector: 'app-metric-widget',
@@ -34,7 +35,8 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
     protected override dashboardState: DashboardStateService,
     protected override numberAnimation: NumberAnimationService,
     protected override errorHandler: ErrorHandler,
-    private chartService: ChartService
+    private chartService: ChartService,
+    private metricCalculation: MetricCalculationService
   ) {
     super(dashboardState, numberAnimation, errorHandler);
   }
@@ -120,14 +122,12 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
     const deviceType = this.dashboardState.getCurrentDeviceType();
     const selectedDay = this.dashboardState.getCurrentSelectedDay();
     
-    const cumulativeValue = metricData.dailyData
-      .filter(d => d.date <= selectedDay)
-      .reduce((sum, day) => {
-        const value = deviceType === 'total' ? day.total :
-                     deviceType === 'desktop' ? day.desktop : day.mobile;
-        return sum + value;
-      }, 0);
-
-    this.isTargetReached = (cumulativeValue / metricData.monthlyTarget) * 100 >= 100;
+    const progressPercentage = this.metricCalculation.calculateProgressPercentage(
+        metricData,
+        selectedDay,
+        deviceType
+    );
+    
+    this.isTargetReached = progressPercentage >= 100;
   }
 }

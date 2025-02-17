@@ -9,6 +9,7 @@ import { NumberAnimationService } from '../../services/number-animation.service'
 import { BaseMetricWidget } from '../base-metric-widget';
 import { Chart } from 'chart.js';
 import { ChartService } from '../../services/chart.service';
+import { MetricCalculationService } from '../../services/metric-calculation.service';
 
 @Component({
   selector: 'app-expanded-metric-widget',
@@ -43,7 +44,8 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     protected override dashboardState: DashboardStateService,
     protected override numberAnimation: NumberAnimationService,
     protected override errorHandler: ErrorHandler,
-    private chartService: ChartService
+    private chartService: ChartService,
+    private metricCalculation: MetricCalculationService
   ) {
     super(dashboardState, numberAnimation, errorHandler);
   }
@@ -136,25 +138,21 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     const deviceType = this.dashboardState.getCurrentDeviceType();
     const selectedDay = this.dashboardState.getCurrentSelectedDay();
     
-    const cumulativeValue = metricData.dailyData
-      .filter(d => d.date <= selectedDay)
-      .reduce((sum, day) => {
-        const value = deviceType === 'total' ? day.total :
-                     deviceType === 'desktop' ? day.desktop : day.mobile;
-        return sum + value;
-      }, 0);
-
-    const newProgressPercentage = (cumulativeValue / metricData.monthlyTarget) * 100;
+    const newProgressPercentage = this.metricCalculation.calculateProgressPercentage(
+        metricData,
+        selectedDay,
+        deviceType
+    );
     
     // Animate the progress percentage if it has changed significantly
     if (Math.abs(this.progressPercentage - newProgressPercentage) > 0.1) {
-      this.numberAnimation.animateValue(
-        this.progressPercentage,
-        newProgressPercentage,
-        (value: number) => this.displayProgressPercentage = value,
-        { precision: 1 }
-      );
-      this.progressPercentage = newProgressPercentage;
+        this.numberAnimation.animateValue(
+            this.progressPercentage,
+            newProgressPercentage,
+            (value: number) => this.displayProgressPercentage = value,
+            { precision: 1 }
+        );
+        this.progressPercentage = newProgressPercentage;
     }
 
     this.isTargetReached = this.progressPercentage >= 100;
@@ -229,30 +227,41 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   }
 
   private updateComparisonMetrics(): void {
-    const data = this.getMetricDataForComparisons();
+    const widget = this.dashboardState.getWidget(this.id);
+    if (!widget) return;
+
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    
+    const data = this.metricCalculation.getMetricDataForComparisons(
+        metricData,
+        selectedDay,
+        deviceType
+    );
     
     // Calculate week-over-week change
-    const weekChange = this.calculateWeekOverWeekChange(data);
+    const weekChange = this.metricCalculation.calculateWeekOverWeekChange(data);
     if (Math.abs(this.lastWeekComparison - weekChange) > 0.1) {
-      this.numberAnimation.animateValue(
-        this.lastWeekComparison,
-        weekChange,
-        (value: number) => this.displayWeekComparison = value,
-        { precision: 1 }
-      );
-      this.lastWeekComparison = weekChange;
+        this.numberAnimation.animateValue(
+            this.lastWeekComparison,
+            weekChange,
+            (value: number) => this.displayWeekComparison = value,
+            { precision: 1 }
+        );
+        this.lastWeekComparison = weekChange;
     }
 
     // Calculate monthly average comparison
-    const avgComparison = this.calculateMonthlyAverageComparison(data);
+    const avgComparison = this.metricCalculation.calculateMonthlyAverageComparison(data);
     if (Math.abs(this.lastAverageComparison - avgComparison) > 0.1) {
-      this.numberAnimation.animateValue(
-        this.lastAverageComparison,
-        avgComparison,
-        (value: number) => this.displayAverageComparison = value,
-        { precision: 1 }
-      );
-      this.lastAverageComparison = avgComparison;
+        this.numberAnimation.animateValue(
+            this.lastAverageComparison,
+            avgComparison,
+            (value: number) => this.displayAverageComparison = value,
+            { precision: 1 }
+        );
+        this.lastAverageComparison = avgComparison;
     }
   }
 

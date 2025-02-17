@@ -10,6 +10,7 @@ import { BaseMetricWidget } from '../../components/base-metric-widget';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { DaySelectorComponent } from '../../components/day-selector/day-selector.component';
 import { MetricData, DailyMetric } from '../../data/mock-metrics';
+import { MetricCalculationService } from '../../services/metric-calculation.service';
 
 // Register all Chart.js components
 Chart.register(...registerables);
@@ -57,7 +58,8 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
     protected override dashboardState: DashboardStateService,
     protected override numberAnimation: NumberAnimationService,
     protected override errorHandler: ErrorHandler,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private metricCalculation: MetricCalculationService
   ) {
     super(dashboardState, numberAnimation, errorHandler);
   }
@@ -336,7 +338,7 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
                    deviceType === 'desktop' ? day.desktop : day.mobile;
       
       const date = new Date(day.date);
-      let dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      let dayOfWeek = date.getDay();
       // Convert to Monday-based index (0 = Monday, 6 = Sunday)
       dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
@@ -456,13 +458,11 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
     const deviceType = this.dashboardState.getCurrentDeviceType();
     const selectedDay = this.dashboardState.getCurrentSelectedDay();
     
-    this.displayCumulativeValue = metricData.dailyData
-      .filter(d => d.date <= selectedDay)
-      .reduce((sum, day) => {
-        const value = deviceType === 'total' ? day.total :
-                     deviceType === 'desktop' ? day.desktop : day.mobile;
-        return sum + value;
-      }, 0);
+    this.displayCumulativeValue = this.metricCalculation.calculateCumulativeValue(
+        metricData,
+        selectedDay,
+        deviceType
+    );
   }
 
   private updateProgressStatus() {
@@ -473,15 +473,13 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
     const deviceType = this.dashboardState.getCurrentDeviceType();
     const selectedDay = this.dashboardState.getCurrentSelectedDay();
     
-    const cumulativeValue = metricData.dailyData
-      .filter(d => d.date <= selectedDay)
-      .reduce((sum, day) => {
-        const value = deviceType === 'total' ? day.total :
-                     deviceType === 'desktop' ? day.desktop : day.mobile;
-        return sum + value;
-      }, 0);
-
-    this.isTargetReached = (cumulativeValue / metricData.monthlyTarget) * 100 >= 100;
+    const progressPercentage = this.metricCalculation.calculateProgressPercentage(
+        metricData,
+        selectedDay,
+        deviceType
+    );
+    
+    this.isTargetReached = progressPercentage >= 100;
   }
 
   private updateComparisonMetrics(): void {
@@ -489,82 +487,41 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
     if (!widget) return;
 
     try {
-      const data = this.getMetricDataForComparisons();
-      if (!data.length) return;
-
-      const weekChange = this.calculateWeekOverWeekChange(data);
-      if (weekChange !== this.lastWeekComparison) {
-        this.numberAnimation.animateValue(
-          this.lastWeekComparison,
-          weekChange,
-          (value: number) => this.displayWeekComparison = value,
-          { duration: 500, precision: 1 }
+        const metricData = this.dashboardState.getMetricData(widget.type);
+        const deviceType = this.dashboardState.getCurrentDeviceType();
+        const selectedDay = this.dashboardState.getCurrentSelectedDay();
+        
+        const data = this.metricCalculation.getMetricDataForComparisons(
+            metricData,
+            selectedDay,
+            deviceType
         );
-        this.lastWeekComparison = weekChange;
-      }
+        if (!data.length) return;
 
-      const avgComparison = this.calculateMonthlyAverageComparison(data);
-      if (avgComparison !== this.lastAverageComparison) {
-        this.numberAnimation.animateValue(
-          this.lastAverageComparison,
-          avgComparison,
-          (value: number) => this.displayAverageComparison = value,
-          { duration: 500, precision: 1 }
-        );
-        this.lastAverageComparison = avgComparison;
-      }
+        const weekChange = this.metricCalculation.calculateWeekOverWeekChange(data);
+        if (weekChange !== this.lastWeekComparison) {
+            this.numberAnimation.animateValue(
+                this.lastWeekComparison,
+                weekChange,
+                (value: number) => this.displayWeekComparison = value,
+                { duration: 500, precision: 1 }
+            );
+            this.lastWeekComparison = weekChange;
+        }
+
+        const avgComparison = this.metricCalculation.calculateMonthlyAverageComparison(data);
+        if (avgComparison !== this.lastAverageComparison) {
+            this.numberAnimation.animateValue(
+                this.lastAverageComparison,
+                avgComparison,
+                (value: number) => this.displayAverageComparison = value,
+                { duration: 500, precision: 1 }
+            );
+            this.lastAverageComparison = avgComparison;
+        }
     } catch (error) {
-      this.handleError(error);
+        this.handleError(error);
     }
-  }
-
-  private getMetricDataForComparisons(): number[] {
-    const widget = this.dashboardState.getWidget(this.id);
-    if (!widget) return [];
-
-    const metricData = this.dashboardState.getMetricData(widget.type);
-    const deviceType = this.dashboardState.getCurrentDeviceType();
-    const selectedDay = this.dashboardState.getCurrentSelectedDay();
-    
-    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
-    if (selectedDayIndex === -1) return [];
-
-    const startIndex = Math.max(0, selectedDayIndex - 29);
-    const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
-
-    return relevantDays.map(d => 
-      deviceType === 'total' ? d.total : 
-      deviceType === 'desktop' ? d.desktop : d.mobile
-    );
-  }
-
-  private calculateWeekOverWeekChange(data: number[]): number {
-    if (data.length < 8) return 0;
-
-    const todayValue = data[data.length - 1];
-    const lastWeekValue = data[data.length - 8];
-    if (lastWeekValue === 0) return 0;
-
-    const change = ((todayValue - lastWeekValue) / lastWeekValue) * 100;
-    
-    if (!isFinite(change)) return 0;
-    return Math.round(change);
-  }
-
-  private calculateMonthlyAverageComparison(data: number[]): number {
-    if (data.length < 2) return 0;
-
-    const todayValue = data[data.length - 1];
-    const previousDays = data.slice(0, -1);
-    if (previousDays.length === 0) return 0;
-
-    const monthlyAverage = previousDays.reduce((sum, value) => sum + value, 0) / previousDays.length;
-    if (monthlyAverage === 0) return 0;
-
-    const change = ((todayValue - monthlyAverage) / monthlyAverage) * 100;
-    
-    if (!isFinite(change)) return 0;
-    return Math.round(change);
   }
 
   getMetricName(): string {

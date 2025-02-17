@@ -6,14 +6,14 @@ A modern analytics dashboard built with Angular 19, featuring real-time metrics 
 
 - **Dynamic Widget System**
   - Drag-and-drop widget organization
-  - Resizable widgets (regular and expanded views)
+  - Multiple widget formats (regular and expanded views)
   - Real-time metric updates
 
 - **Metric Visualizations**
-  - User analytics tracking
+  - Audience (reach) statistics
   - Page view statistics
   - Interactive charts using Chart.js
-  - Animated number transitions
+  - Animated numbers and charts transitions
 
 - **Filtering & Controls**
   - Date-based filtering
@@ -45,6 +45,7 @@ src/
 │   ├── services/
 │   │   ├── chart.service.ts      # Chart configuration and setup
 │   │   ├── dashboard-state.service.ts # State management
+│   │   ├── metric-calculation.service.ts # Metric calculations and analytics
 │   │   └── number-animation.service.ts # Number animations
 │   └── data/
 │       └── mock-metrics.ts       # Mock data for development
@@ -85,6 +86,12 @@ src/
 - Handles widget configurations
 - Manages metric data caching
 - Controls device and date filtering
+
+### MetricCalculationService
+- Centralized metric calculations
+- Handles cumulative values and progress percentages
+- Calculates week-over-week and monthly comparisons
+- Provides consistent data analysis across components
 
 ### Metric Widgets
 - Base widget functionality in `base-metric-widget.ts`
