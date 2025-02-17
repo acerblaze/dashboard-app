@@ -69,6 +69,11 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
     const widgetId = parseInt(this.route.snapshot.paramMap.get('id') || '0', 10);
     if (widgetId) {
       this.id = widgetId;
+      // Initialize with zero values first
+      this.progressPercentage = 0;
+      this.displayProgressPercentage = 0;
+      this.displayCumulativeValue = 0;
+      this.displayValue = 0;
       super.ngOnInit();
     }
   }
@@ -79,9 +84,14 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
   }
 
   ngAfterViewInit() {
-    this.initializeCharts();
-    this.updateChartData();
-    this.setupChartResizeObservers();
+    if (this.id) {
+      this.initializeCharts();
+      this.setupChartResizeObservers();
+      // Delay the initial metrics calculation slightly to allow for animation
+      setTimeout(() => {
+        this.safelyCalculateMetrics();
+      }, 100);
+    }
   }
 
   private destroyCharts() {
@@ -403,43 +413,32 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
   }
 
   private setupChartResizeObservers(): void {
-    if (this.mainChartCanvas?.nativeElement) {
+    try {
       const resizeObserver = new ResizeObserver(() => {
-        if (this.mainChart) {
-          this.mainChart.resize();
-        }
+        this.mainChart?.resize();
       });
-
       resizeObserver.observe(this.mainChartCanvas.nativeElement);
-      this.subscriptions.add({
+      this.subscription.add({
         unsubscribe: () => resizeObserver.disconnect()
       });
-    }
 
-    if (this.secondaryChartCanvas?.nativeElement) {
-      const resizeObserver = new ResizeObserver(() => {
-        if (this.secondaryChart) {
-          this.secondaryChart.resize();
-        }
+      const secondaryResizeObserver = new ResizeObserver(() => {
+        this.secondaryChart?.resize();
+      });
+      secondaryResizeObserver.observe(this.secondaryChartCanvas.nativeElement);
+      this.subscription.add({
+        unsubscribe: () => secondaryResizeObserver.disconnect()
       });
 
-      resizeObserver.observe(this.secondaryChartCanvas.nativeElement);
-      this.subscriptions.add({
-        unsubscribe: () => resizeObserver.disconnect()
+      const tertiaryResizeObserver = new ResizeObserver(() => {
+        this.tertiaryChart?.resize();
       });
-    }
-
-    if (this.tertiaryChartCanvas?.nativeElement) {
-      const resizeObserver = new ResizeObserver(() => {
-        if (this.tertiaryChart) {
-          this.tertiaryChart.resize();
-        }
+      tertiaryResizeObserver.observe(this.tertiaryChartCanvas.nativeElement);
+      this.subscription.add({
+        unsubscribe: () => tertiaryResizeObserver.disconnect()
       });
-
-      resizeObserver.observe(this.tertiaryChartCanvas.nativeElement);
-      this.subscriptions.add({
-        unsubscribe: () => resizeObserver.disconnect()
-      });
+    } catch (error) {
+      this.handleError(error);
     }
   }
 
@@ -478,6 +477,17 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
         selectedDay,
         deviceType
     );
+    
+    // Always animate on the first load or when value changes significantly
+    if (this.progressPercentage === 0 || Math.abs(this.progressPercentage - progressPercentage) > 0.1) {
+      this.numberAnimation.animateValue(
+        this.progressPercentage,
+        progressPercentage,
+        (value: number) => this.displayProgressPercentage = value,
+        { duration: 1000, precision: 1 }
+      );
+      this.progressPercentage = progressPercentage;
+    }
     
     this.isTargetReached = progressPercentage >= 100;
   }

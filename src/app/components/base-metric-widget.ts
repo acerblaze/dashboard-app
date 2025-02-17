@@ -1,6 +1,6 @@
 import { Input, OnInit, OnDestroy, Directive, ErrorHandler } from '@angular/core';
 import { DashboardStateService, MetricType, DeviceType } from '../services/dashboard-state.service';
-import { MetricData } from '../data/mock-metrics';
+import { MetricData, DailyMetric } from '../data/mock-metrics';
 import { Subscription, combineLatest } from 'rxjs';
 import { NumberAnimationService } from '../services/number-animation.service';
 import { distinctUntilChanged, filter, map, debounceTime } from 'rxjs/operators';
@@ -10,15 +10,17 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   @Input() metricType!: MetricType;
   @Input() id!: number;
 
-  protected currentValue: number = 0;
-  protected displayValue: number = 0;
-  protected cumulativeValue: number = 0;
-  protected displayCumulativeValue: number = 0;
-  protected progressPercentage: number = 0;
-  protected displayProgressPercentage: number = 0;
-  protected subscriptions = new Subscription();
-  protected lastCurrentValue: number = 0;
-  protected lastCumulativeValue: number = 0;
+  protected currentValue = 0;
+  protected displayValue = 0;
+  protected cumulativeValue = 0;
+  protected displayCumulativeValue = 0;
+  protected progressPercentage = 0;
+  protected displayProgressPercentage = 0;
+  protected subscription = new Subscription();
+  protected lastValues = {
+    current: 0,
+    cumulative: 0
+  };
   protected error: string | null = null;
 
   constructor(
@@ -28,51 +30,52 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.initializeSubscriptions();
+    this.initializeSubscription();
   }
 
   ngOnDestroy() {
-    this.subscriptions.unsubscribe();
+    this.subscription.unsubscribe();
   }
 
-  protected initializeSubscriptions(): void {
-    this.subscriptions.add(
+  protected initializeSubscription(): void {
+    const widgetUpdates$ = combineLatest([
+      this.dashboardState.regularWidgets$.pipe(
+        map(widgets => widgets.find(w => w.id === this.id))
+      ),
+      this.dashboardState.expandedWidgets$.pipe(
+        map(widgets => widgets.find(w => w.id === this.id))
+      )
+    ]).pipe(
+      distinctUntilChanged((prev, curr) => 
+        prev[0]?.id === curr[0]?.id && 
+        prev[0]?.type === curr[0]?.type &&
+        prev[1]?.id === curr[1]?.id && 
+        prev[1]?.type === curr[1]?.type
+      )
+    );
+
+    this.subscription.add(
       combineLatest([
         this.dashboardState.deviceType$,
         this.dashboardState.selectedDay$,
-        this.getWidgetUpdates()
+        widgetUpdates$
       ]).pipe(
         debounceTime(50),
         filter(() => !!this.dashboardState.getWidget(this.id))
       ).subscribe({
-        next: () => {
-          try {
-            this.calculateMetrics();
-            this.error = null;
-          } catch (err) {
-            this.handleError(err);
-          }
-        },
+        next: () => this.safelyCalculateMetrics(),
         error: (err) => this.handleError(err)
       })
     );
   }
 
-  protected getWidgetUpdates() {
-    return combineLatest([
-      this.dashboardState.regularWidgets$.pipe(
-        map(widgets => widgets.find(w => w.id === this.id)),
-        distinctUntilChanged((prev, curr) => 
-          prev?.id === curr?.id && prev?.type === curr?.type
-        )
-      ),
-      this.dashboardState.expandedWidgets$.pipe(
-        map(widgets => widgets.find(w => w.id === this.id)),
-        distinctUntilChanged((prev, curr) => 
-          prev?.id === curr?.id && prev?.type === curr?.type
-        )
-      )
-    ]);
+  protected safelyCalculateMetrics(): void {
+    try {
+      this.calculateMetrics();
+      this.error = null;
+    } catch (err) {
+      this.handleError(err);
+    }
   }
 
   protected handleError(err: unknown): void {
@@ -86,66 +89,66 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
     const widget = this.dashboardState.getWidget(this.id);
     if (!widget) return;
 
-    try {
-      const metricData = this.dashboardState.getMetricData(widget.type);
-      const deviceType = this.dashboardState.getCurrentDeviceType();
-      const selectedDay = this.dashboardState.getCurrentSelectedDay();
-      const selectedDayData = this.getSelectedDayData(metricData, selectedDay);
-      
-      this.updateCurrentValue(selectedDayData, deviceType);
-      this.updateCumulativeValue(metricData, selectedDay, deviceType);
-      this.updateProgressPercentage(metricData);
-    } catch (err) {
-      this.handleError(err);
-    }
+    const metricData = this.dashboardState.getMetricData(widget.type);
+    const deviceType = this.dashboardState.getCurrentDeviceType();
+    const selectedDay = this.dashboardState.getCurrentSelectedDay();
+    const selectedDayData = this.findDayData(metricData, selectedDay);
+    
+    this.updateMetricValues(selectedDayData, deviceType, metricData, selectedDay);
   }
 
-  private getSelectedDayData(metricData: MetricData, selectedDay: string) {
-    const selectedDayData = metricData.dailyData.find(d => d.date === selectedDay);
-    if (!selectedDayData) {
+  private findDayData(metricData: MetricData, selectedDay: string): DailyMetric {
+    const dayData = metricData.dailyData.find(d => d.date === selectedDay);
+    if (!dayData) {
       throw new Error(`No data found for selected day: ${selectedDay}`);
     }
-    return selectedDayData;
+    return dayData;
   }
 
-  private updateCurrentValue(selectedDayData: any, deviceType: DeviceType): void {
-    const newCurrentValue = deviceType === 'total' ? selectedDayData.total :
-                          deviceType === 'desktop' ? selectedDayData.desktop : 
-                          selectedDayData.mobile;
+  private getDeviceValue(data: DailyMetric, deviceType: DeviceType): number {
+    return deviceType === 'total' ? data.total :
+           deviceType === 'desktop' ? data.desktop : 
+           data.mobile;
+  }
 
-    if (Math.abs(this.lastCurrentValue - newCurrentValue) > 0.1) {
+  private updateMetricValues(
+    selectedDayData: DailyMetric, 
+    deviceType: DeviceType,
+    metricData: MetricData,
+    selectedDay: string
+  ): void {
+    const newCurrentValue = this.getDeviceValue(selectedDayData, deviceType);
+    const newCumulativeValue = metricData.dailyData
+      .filter(d => d.date <= selectedDay)
+      .reduce((sum, day) => sum + this.getDeviceValue(day, deviceType), 0);
+
+    this.animateValueChange('current', newCurrentValue);
+    this.animateValueChange('cumulative', newCumulativeValue);
+    this.updateProgress(metricData);
+  }
+
+  private animateValueChange(type: 'current' | 'cumulative', newValue: number): void {
+    const lastValue = this.lastValues[type];
+    if (Math.abs(lastValue - newValue) > 0.1) {
       this.numberAnimation.animateValue(
-        this.lastCurrentValue,
-        newCurrentValue,
-        (value: number) => this.displayValue = value,
+        lastValue,
+        newValue,
+        (value: number) => {
+          if (type === 'current') {
+            this.displayValue = value;
+            this.currentValue = newValue;
+          } else {
+            this.displayCumulativeValue = value;
+            this.cumulativeValue = newValue;
+          }
+        },
         { precision: 0 }
       );
-      this.lastCurrentValue = newCurrentValue;
-      this.currentValue = newCurrentValue;
+      this.lastValues[type] = newValue;
     }
   }
 
-  private updateCumulativeValue(metricData: MetricData, selectedDay: string, deviceType: DeviceType): void {
-    const cumulativeValue = metricData.dailyData
-      .filter(d => d.date <= selectedDay)
-      .reduce((sum, day) => {
-        const value = deviceType === 'total' ? day.total :
-                     deviceType === 'desktop' ? day.desktop : day.mobile;
-        return sum + value;
-      }, 0);
-
-    if (Math.abs(this.lastCumulativeValue - cumulativeValue) > 0.1) {
-      this.numberAnimation.animateValue(
-        this.lastCumulativeValue,
-        cumulativeValue,
-        (value: number) => this.displayCumulativeValue = value
-      );
-      this.lastCumulativeValue = cumulativeValue;
-      this.cumulativeValue = cumulativeValue;
-    }
-  }
-
-  private updateProgressPercentage(metricData: MetricData): void {
+  private updateProgress(metricData: MetricData): void {
     const newProgressPercentage = (this.cumulativeValue / metricData.monthlyTarget) * 100;
     
     if (Math.abs(this.progressPercentage - newProgressPercentage) > 0.1) {

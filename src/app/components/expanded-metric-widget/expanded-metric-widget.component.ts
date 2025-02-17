@@ -79,7 +79,7 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     
     this.trendChart = new Chart(ctx, config);
     this.updateChartData();
-    this.subscriptions.add({
+    this.subscription.add({
       unsubscribe: () => this.chartService.setupChartResizeObserver(
         this.trendChart!,
         this.trendChartCanvas.nativeElement
