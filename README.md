@@ -1,6 +1,6 @@
 # Analytics Dashboard Application
 
-A modern, responsive analytics dashboard built with Angular 19, featuring real-time metrics visualization, customizable widgets, and an intuitive user interface.
+A modern analytics dashboard built with Angular 19, featuring real-time metrics visualization, customizable widgets, and an intuitive user interface.
 
 ## Features
 
@@ -8,7 +8,6 @@ A modern, responsive analytics dashboard built with Angular 19, featuring real-t
   - Drag-and-drop widget organization
   - Resizable widgets (regular and expanded views)
   - Real-time metric updates
-  - Customizable widget layouts
 
 - **Metric Visualizations**
   - User analytics tracking
@@ -20,7 +19,6 @@ A modern, responsive analytics dashboard built with Angular 19, featuring real-t
   - Date-based filtering
   - Device type filtering (Desktop/Mobile/Total)
   - Dynamic data caching
-  - Responsive layout
 
 ## Technology Stack
 
@@ -98,15 +96,3 @@ src/
 - Date selection through `day-selector` component
 - Device type filtering (Desktop/Mobile/Total)
 - Cached data management for performance
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
