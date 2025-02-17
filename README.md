@@ -1,59 +1,112 @@
-# DashboardApp
+# Analytics Dashboard Application
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.1.6.
+A modern, responsive analytics dashboard built with Angular 19, featuring real-time metrics visualization, customizable widgets, and an intuitive user interface.
 
-## Development server
+## Features
 
-To start a local development server, run:
+- **Dynamic Widget System**
+  - Drag-and-drop widget organization
+  - Resizable widgets (regular and expanded views)
+  - Real-time metric updates
+  - Customizable widget layouts
 
-```bash
-ng serve
+- **Metric Visualizations**
+  - User analytics tracking
+  - Page view statistics
+  - Interactive charts using Chart.js
+  - Animated number transitions
+
+- **Filtering & Controls**
+  - Date-based filtering
+  - Device type filtering (Desktop/Mobile/Total)
+  - Dynamic data caching
+  - Responsive layout
+
+## Technology Stack
+
+- **Frontend Framework**: Angular 19.1.0
+- **UI Components**: Angular Material 19.1.4
+- **Charting**: Chart.js 4.4.7
+- **Date Handling**: Moment.js 2.30.1
+- **State Management**: RxJS 7.8.0
+- **Styling**: SCSS
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── components/
+│   │   ├── day-selector/          # Date selection component
+│   │   ├── metric-widget/         # Regular-sized metric widget
+│   │   ├── expanded-metric-widget/ # Expanded metric widget
+│   │   └── base-metric-widget.ts  # Base widget class
+│   ├── pages/
+│   │   ├── dashboard/            # Main dashboard view
+│   │   └── metric-details/       # Detailed metric view
+│   ├── services/
+│   │   ├── chart.service.ts      # Chart configuration and setup
+│   │   ├── dashboard-state.service.ts # State management
+│   │   └── number-animation.service.ts # Number animations
+│   └── data/
+│       └── mock-metrics.ts       # Mock data for development
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+## Setup and Installation
 
-## Code scaffolding
+1. **Prerequisites**
+   - Node.js (LTS version)
+   - Angular CLI 19.1.6
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+2. **Installation**
+   ```bash
+   # Clone the repository
+   git clone [repository-url]
+   cd dashboard-app
 
-```bash
-ng generate component component-name
-```
+   # Install dependencies
+   npm install
+   ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+3. **Development Server**
+   ```bash
+   npm start
+   ```
+   Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
-```bash
-ng generate --help
-```
+4. **Build**
+   ```bash
+   npm run build
+   ```
+   The build artifacts will be stored in the `dist/` directory.
 
-## Building
+## Key Components
 
-To build the project run:
+### DashboardStateService
+- Central state management service
+- Handles widget configurations
+- Manages metric data caching
+- Controls device and date filtering
 
-```bash
-ng build
-```
+### Metric Widgets
+- Base widget functionality in `base-metric-widget.ts`
+- Regular and expanded view implementations
+- Real-time data updates
+- Interactive charts and animations
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Data Filtering
+- Date selection through `day-selector` component
+- Device type filtering (Desktop/Mobile/Total)
+- Cached data management for performance
 
-## Running unit tests
+## Contributing
 
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-```bash
-ng test
-```
+## License
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+This project is licensed under the MIT License - see the LICENSE file for details.
