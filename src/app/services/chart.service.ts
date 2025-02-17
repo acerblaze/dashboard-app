@@ -6,6 +6,24 @@ import { DashboardStateService } from './dashboard-state.service';
   providedIn: 'root'
 })
 export class ChartService {
+  private readonly CHART_DEFAULTS = {
+    ANIMATION_DURATION: 300,
+    POINT_RADIUS: 2,
+    POINT_HOVER_RADIUS: 4,
+    BORDER_WIDTH: 2,
+    LINE_TENSION: 0.4,
+    FONT_SIZE: 11
+  };
+
+  private readonly TOOLTIP_CONFIG = {
+    backgroundColor: 'hsl(0 0% 100%)',
+    titleColor: 'hsl(240 5.9% 10%)',
+    bodyColor: 'hsl(240 3.8% 46.1%)',
+    borderColor: 'hsl(240 5.9% 90%)',
+    borderWidth: 1,
+    padding: 8
+  };
+
   constructor(private dashboardState: DashboardStateService) {}
 
   getBaseChartConfig(chartColor: string, isCompact: boolean = false): ChartConfiguration {
@@ -17,10 +35,10 @@ export class ChartService {
           data: [],
           borderColor: chartColor,
           backgroundColor: isCompact ? 'transparent' : `${chartColor.split(')')[0]} / 0.1)`,
-          tension: 0.4,
-          borderWidth: 2,
-          pointRadius: 2,
-          pointHoverRadius: 4,
+          tension: this.CHART_DEFAULTS.LINE_TENSION,
+          borderWidth: this.CHART_DEFAULTS.BORDER_WIDTH,
+          pointRadius: this.CHART_DEFAULTS.POINT_RADIUS,
+          pointHoverRadius: this.CHART_DEFAULTS.POINT_HOVER_RADIUS,
           pointBackgroundColor: chartColor,
           pointBorderColor: 'white',
           pointBorderWidth: 1,
@@ -31,7 +49,7 @@ export class ChartService {
         responsive: true,
         maintainAspectRatio: false,
         animation: {
-          duration: 300
+          duration: this.CHART_DEFAULTS.ANIMATION_DURATION
         },
         plugins: {
           legend: {
@@ -40,62 +58,14 @@ export class ChartService {
           tooltip: {
             mode: 'index',
             intersect: false,
-            backgroundColor: 'hsl(0 0% 100%)',
-            titleColor: 'hsl(240 5.9% 10%)',
-            bodyColor: 'hsl(240 3.8% 46.1%)',
-            borderColor: 'hsl(240 5.9% 90%)',
-            borderWidth: 1,
-            padding: 8,
+            ...this.TOOLTIP_CONFIG,
             displayColors: false,
             callbacks: {
               label: (context) => `${context.raw}`
             }
           }
         },
-        scales: {
-          x: {
-            display: !isCompact,
-            grid: {
-              display: false
-            },
-            ticks: {
-              maxRotation: 0,
-              font: {
-                size: 11
-              }
-            }
-          },
-          y: {
-            display: !isCompact,
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
-            },
-            ticks: {
-              font: {
-                size: 11
-              }
-            },
-            ...(isCompact && {
-              suggestedMin: (context: { chart: Chart }) => {
-                const values = context.chart.data.datasets[0].data as number[];
-                if (values.length === 0) return 0;
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const range = max - min;
-                return min - (range * 0.05);
-              },
-              suggestedMax: (context: { chart: Chart }) => {
-                const values = context.chart.data.datasets[0].data as number[];
-                if (values.length === 0) return 100;
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const range = max - min;
-                return max + (range * 0.05);
-              }
-            })
-          }
-        },
+        scales: this.getScalesConfig(isCompact),
         interaction: {
           mode: 'index',
           intersect: false
@@ -107,6 +77,57 @@ export class ChartService {
       }
     };
   }
+
+  private getScalesConfig(isCompact: boolean) {
+    return {
+      x: {
+        display: !isCompact,
+        grid: {
+          display: false
+        },
+        ticks: {
+          maxRotation: 0,
+          font: {
+            size: this.CHART_DEFAULTS.FONT_SIZE
+          }
+        }
+      },
+      y: {
+        display: !isCompact,
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)'
+        },
+        ticks: {
+          font: {
+            size: this.CHART_DEFAULTS.FONT_SIZE
+          }
+        },
+        ...(isCompact && {
+          suggestedMin: this.calculateSuggestedMin,
+          suggestedMax: this.calculateSuggestedMax
+        })
+      }
+    };
+  }
+
+  private calculateSuggestedMin = (context: { chart: Chart }) => {
+    const values = context.chart.data.datasets[0].data as number[];
+    if (values.length === 0) return 0;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    return min - (range * 0.05);
+  };
+
+  private calculateSuggestedMax = (context: { chart: Chart }) => {
+    const values = context.chart.data.datasets[0].data as number[];
+    if (values.length === 0) return 100;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const range = max - min;
+    return max + (range * 0.05);
+  };
 
   getChartColor(type: 'users' | 'pageViews'): string {
     return type === 'pageViews' 

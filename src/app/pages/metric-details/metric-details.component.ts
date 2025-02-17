@@ -54,14 +54,55 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
     pageViews: 'hsl(270 91.2% 59.8%)'    // Purple
   };
 
+  private readonly CHART_DEFAULTS = {
+    FONT_SIZE: 11,
+    TOOLTIP_PADDING: 12,
+    BORDER_WIDTH: 2
+  };
+
+  private readonly TOOLTIP_CONFIG = {
+    backgroundColor: 'hsl(0 0% 100%)',
+    titleColor: 'hsl(240 5.9% 10%)',
+    bodyColor: 'hsl(240 3.8% 46.1%)',
+    borderColor: 'hsl(240 5.9% 90%)',
+    borderWidth: 1,
+    padding: this.CHART_DEFAULTS.TOOLTIP_PADDING
+  };
+
+  private readonly SCALE_CONFIG = {
+    x: {
+      display: true,
+      grid: {
+        display: false
+      },
+      ticks: {
+        font: {
+          size: this.CHART_DEFAULTS.FONT_SIZE
+        }
+      }
+    },
+    y: {
+      display: true,
+      beginAtZero: true,
+      grid: {
+        color: 'rgba(0, 0, 0, 0.1)'
+      },
+      ticks: {
+        font: {
+          size: this.CHART_DEFAULTS.FONT_SIZE
+        }
+      }
+    }
+  };
+
   constructor(
     protected override dashboardState: DashboardStateService,
     protected override numberAnimation: NumberAnimationService,
     protected override errorHandler: ErrorHandler,
-    private route: ActivatedRoute,
-    private metricCalculation: MetricCalculationService
+    protected override metricCalculation: MetricCalculationService,
+    private route: ActivatedRoute
   ) {
-    super(dashboardState, numberAnimation, errorHandler);
+    super(dashboardState, numberAnimation, errorHandler, metricCalculation);
   }
 
   override ngOnInit() {
@@ -132,7 +173,7 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
                 `${metricColor.split(')')[0]} / 0.6)`
               ],
               borderColor: 'white',
-              borderWidth: 2
+              borderWidth: this.CHART_DEFAULTS.BORDER_WIDTH
             }]
           },
           options: {
@@ -150,17 +191,12 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
                   padding: 20,
                   usePointStyle: true,
                   font: {
-                    size: 12
+                    size: this.CHART_DEFAULTS.FONT_SIZE
                   }
                 }
               },
               tooltip: {
-                backgroundColor: 'hsl(0 0% 100%)',
-                titleColor: 'hsl(240 5.9% 10%)',
-                bodyColor: 'hsl(240 3.8% 46.1%)',
-                borderColor: 'hsl(240 5.9% 90%)',
-                borderWidth: 1,
-                padding: 12,
+                ...this.TOOLTIP_CONFIG,
                 displayColors: true,
                 callbacks: {
                   label: (context) => {
@@ -190,7 +226,7 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
               data: Array(7).fill(0),
               backgroundColor: `${metricColor.split(')')[0]} / 0.2)`,
               borderColor: metricColor,
-              borderWidth: 2,
+              borderWidth: this.CHART_DEFAULTS.BORDER_WIDTH,
               borderRadius: 4,
               hoverBackgroundColor: `${metricColor.split(')')[0]} / 0.3)`
             }]
@@ -203,44 +239,14 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
                 display: false
               },
               tooltip: {
-                backgroundColor: 'hsl(0 0% 100%)',
-                titleColor: 'hsl(240 5.9% 10%)',
-                bodyColor: 'hsl(240 3.8% 46.1%)',
-                borderColor: 'hsl(240 5.9% 90%)',
-                borderWidth: 1,
-                padding: 12,
+                ...this.TOOLTIP_CONFIG,
                 displayColors: false,
                 callbacks: {
                   label: (context) => `Average: ${this.formatNumber(context.raw as number)}`
                 }
               }
             },
-            scales: {
-              x: {
-                display: true,
-                grid: {
-                  display: false
-                },
-                ticks: {
-                  font: {
-                    size: 11
-                  }
-                }
-              },
-              y: {
-                display: true,
-                beginAtZero: true,
-                grid: {
-                  color: 'rgba(0, 0, 0, 0.1)'
-                },
-                ticks: {
-                  font: {
-                    size: 11
-                  },
-                  callback: (value) => this.formatNumber(value as number)
-                }
-              }
-            }
+            scales: this.SCALE_CONFIG
           }
         });
       }
@@ -260,7 +266,7 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
           borderColor: chartColor,
           backgroundColor: `${chartColor.split(')')[0]} / 0.1)`,
           tension: 0.4,
-          borderWidth: 2,
+          borderWidth: this.CHART_DEFAULTS.BORDER_WIDTH,
           pointRadius: 2,
           pointHoverRadius: 4,
           pointBackgroundColor: chartColor,
@@ -272,9 +278,6 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        animation: {
-          duration: 300
-        },
         plugins: {
           legend: {
             display: false
@@ -282,45 +285,14 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
           tooltip: {
             mode: 'index',
             intersect: false,
-            backgroundColor: 'hsl(0 0% 100%)',
-            titleColor: 'hsl(240 5.9% 10%)',
-            bodyColor: 'hsl(240 3.8% 46.1%)',
-            borderColor: 'hsl(240 5.9% 90%)',
-            borderWidth: 1,
-            padding: 8,
+            ...this.TOOLTIP_CONFIG,
             displayColors: false,
             callbacks: {
-              label: (context) => `${this.formatNumber(context.raw as number)}`
+              label: (context) => this.formatNumber(context.raw as number)
             }
           }
         },
-        scales: {
-          x: {
-            display: true,
-            grid: {
-              display: false
-            },
-            ticks: {
-              maxRotation: 0,
-              font: {
-                size: 11
-              }
-            }
-          },
-          y: {
-            display: true,
-            beginAtZero: true,
-            grid: {
-              color: 'rgba(0, 0, 0, 0.1)'
-            },
-            ticks: {
-              font: {
-                size: 11
-              },
-              callback: (value) => this.formatNumber(value as number)
-            }
-          }
-        },
+        scales: this.SCALE_CONFIG,
         interaction: {
           mode: 'index',
           intersect: false
@@ -413,33 +385,28 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
   }
 
   private setupChartResizeObservers(): void {
-    try {
-      const resizeObserver = new ResizeObserver(() => {
-        this.mainChart?.resize();
-      });
-      resizeObserver.observe(this.mainChartCanvas.nativeElement);
-      this.subscription.add({
-        unsubscribe: () => resizeObserver.disconnect()
-      });
-
-      const secondaryResizeObserver = new ResizeObserver(() => {
-        this.secondaryChart?.resize();
-      });
-      secondaryResizeObserver.observe(this.secondaryChartCanvas.nativeElement);
-      this.subscription.add({
-        unsubscribe: () => secondaryResizeObserver.disconnect()
-      });
-
-      const tertiaryResizeObserver = new ResizeObserver(() => {
-        this.tertiaryChart?.resize();
-      });
-      tertiaryResizeObserver.observe(this.tertiaryChartCanvas.nativeElement);
-      this.subscription.add({
-        unsubscribe: () => tertiaryResizeObserver.disconnect()
-      });
-    } catch (error) {
-      this.handleError(error);
+    if (this.mainChart && this.mainChartCanvas?.nativeElement) {
+      this.setupSingleChartResizeObserver(this.mainChart, this.mainChartCanvas.nativeElement);
     }
+    if (this.secondaryChart && this.secondaryChartCanvas?.nativeElement) {
+      this.setupSingleChartResizeObserver(this.secondaryChart, this.secondaryChartCanvas.nativeElement);
+    }
+    if (this.tertiaryChart && this.tertiaryChartCanvas?.nativeElement) {
+      this.setupSingleChartResizeObserver(this.tertiaryChart, this.tertiaryChartCanvas.nativeElement);
+    }
+  }
+
+  private setupSingleChartResizeObserver(chart: Chart, element: HTMLElement): void {
+    const resizeObserver = new ResizeObserver(() => {
+      if (chart) {
+        chart.resize();
+      }
+    });
+    
+    resizeObserver.observe(element);
+    this.subscription.add({
+      unsubscribe: () => resizeObserver.disconnect()
+    });
   }
 
   protected override calculateMetrics(): void {

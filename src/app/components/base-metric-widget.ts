@@ -1,9 +1,15 @@
 import { Input, OnInit, OnDestroy, Directive, ErrorHandler } from '@angular/core';
-import { DashboardStateService, MetricType, DeviceType } from '../services/dashboard-state.service';
-import { MetricData, DailyMetric } from '../data/mock-metrics';
+import { DashboardStateService, MetricType } from '../services/dashboard-state.service';
 import { Subscription, combineLatest } from 'rxjs';
 import { NumberAnimationService } from '../services/number-animation.service';
 import { distinctUntilChanged, filter, map, debounceTime } from 'rxjs/operators';
+import { MetricCalculationService } from '../services/metric-calculation.service';
+import { MetricData } from '../data/mock-metrics';
+
+export interface Widget {
+  id: number;
+  type: MetricType;
+}
 
 @Directive()
 export abstract class BaseMetricWidget implements OnInit, OnDestroy {
@@ -26,7 +32,8 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   constructor(
     protected dashboardState: DashboardStateService,
     protected numberAnimation: NumberAnimationService,
-    protected errorHandler: ErrorHandler
+    protected errorHandler: ErrorHandler,
+    protected metricCalculation: MetricCalculationService
   ) {}
 
   ngOnInit() {
@@ -40,10 +47,10 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   protected initializeSubscription(): void {
     const widgetUpdates$ = combineLatest([
       this.dashboardState.regularWidgets$.pipe(
-        map(widgets => widgets.find(w => w.id === this.id))
+        map((widgets: Widget[]) => widgets.find((w: Widget) => w.id === this.id))
       ),
       this.dashboardState.expandedWidgets$.pipe(
-        map(widgets => widgets.find(w => w.id === this.id))
+        map((widgets: Widget[]) => widgets.find((w: Widget) => w.id === this.id))
       )
     ]).pipe(
       distinctUntilChanged((prev, curr) => 
@@ -92,35 +99,10 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
     const metricData = this.dashboardState.getMetricData(widget.type);
     const deviceType = this.dashboardState.getCurrentDeviceType();
     const selectedDay = this.dashboardState.getCurrentSelectedDay();
-    const selectedDayData = this.findDayData(metricData, selectedDay);
     
-    this.updateMetricValues(selectedDayData, deviceType, metricData, selectedDay);
-  }
-
-  private findDayData(metricData: MetricData, selectedDay: string): DailyMetric {
-    const dayData = metricData.dailyData.find(d => d.date === selectedDay);
-    if (!dayData) {
-      throw new Error(`No data found for selected day: ${selectedDay}`);
-    }
-    return dayData;
-  }
-
-  private getDeviceValue(data: DailyMetric, deviceType: DeviceType): number {
-    return deviceType === 'total' ? data.total :
-           deviceType === 'desktop' ? data.desktop : 
-           data.mobile;
-  }
-
-  private updateMetricValues(
-    selectedDayData: DailyMetric, 
-    deviceType: DeviceType,
-    metricData: MetricData,
-    selectedDay: string
-  ): void {
-    const newCurrentValue = this.getDeviceValue(selectedDayData, deviceType);
-    const newCumulativeValue = metricData.dailyData
-      .filter(d => d.date <= selectedDay)
-      .reduce((sum, day) => sum + this.getDeviceValue(day, deviceType), 0);
+    const selectedDayData = this.metricCalculation.findDayData(metricData, selectedDay);
+    const newCurrentValue = this.metricCalculation.calculateCurrentValue(selectedDayData, deviceType);
+    const newCumulativeValue = this.metricCalculation.calculateCumulativeValue(metricData, selectedDay, deviceType);
 
     this.animateValueChange('current', newCurrentValue);
     this.animateValueChange('cumulative', newCumulativeValue);
@@ -149,7 +131,11 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   }
 
   private updateProgress(metricData: MetricData): void {
-    const newProgressPercentage = (this.cumulativeValue / metricData.monthlyTarget) * 100;
+    const newProgressPercentage = this.metricCalculation.calculateProgressPercentage(
+      metricData,
+      this.dashboardState.getCurrentSelectedDay(),
+      this.dashboardState.getCurrentDeviceType()
+    );
     
     if (Math.abs(this.progressPercentage - newProgressPercentage) > 0.1) {
       this.numberAnimation.animatePercentage(
@@ -167,11 +153,11 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
   }
 
   formatNumber(value: number): string {
-    return new Intl.NumberFormat('en-US').format(Math.round(value));
+    return this.metricCalculation.formatNumber(value);
   }
 
   formatPercentage(value: number): string {
-    return `${Math.round(value)}%`;
+    return this.metricCalculation.formatPercentage(value);
   }
 
   abstract toggleSize(): void;

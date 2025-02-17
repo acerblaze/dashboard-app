@@ -44,10 +44,10 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     protected override dashboardState: DashboardStateService,
     protected override numberAnimation: NumberAnimationService,
     protected override errorHandler: ErrorHandler,
-    private chartService: ChartService,
-    private metricCalculation: MetricCalculationService
+    protected override metricCalculation: MetricCalculationService,
+    private chartService: ChartService
   ) {
-    super(dashboardState, numberAnimation, errorHandler);
+    super(dashboardState, numberAnimation, errorHandler, metricCalculation);
   }
 
   override ngOnInit() {
@@ -179,12 +179,12 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
 
   getWeekOverWeekChange(): number {
     const data = this.getMetricDataForComparisons();
-    return this.calculateWeekOverWeekChange(data);
+    return this.metricCalculation.calculateWeekOverWeekChange(data);
   }
 
   getAverageComparison(): number {
     const data = this.getMetricDataForComparisons();
-    return this.calculateMonthlyAverageComparison(data);
+    return this.metricCalculation.calculateMonthlyAverageComparison(data);
   }
 
   private getLastSevenDays(): string[] {
@@ -272,42 +272,11 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
     const metricData = this.dashboardState.getMetricData(widget.type);
     const deviceType = this.dashboardState.getCurrentDeviceType();
     const selectedDay = this.dashboardState.getCurrentSelectedDay();
-    const selectedDayIndex = metricData.dailyData.findIndex(d => d.date === selectedDay);
-    if (selectedDayIndex === -1) return [];
-
-    // Get data for the last 14 days (2 weeks)
-    const startIndex = Math.max(0, selectedDayIndex - 13);
-    return metricData.dailyData
-      .slice(startIndex, selectedDayIndex + 1)
-      .map(d => deviceType === 'total' ? d.total :
-                deviceType === 'desktop' ? d.desktop : d.mobile);
-  }
-
-  private calculateWeekOverWeekChange(data: number[]): number {
-    if (data.length < 14) return 0;
-
-    // Calculate average for current week (last 7 days)
-    const currentWeek = data.slice(-7);
-    const currentWeekAvg = currentWeek.reduce((a, b) => a + b, 0) / currentWeek.length;
-
-    // Calculate average for previous week (7 days before current week)
-    const previousWeek = data.slice(-14, -7);
-    const previousWeekAvg = previousWeek.reduce((a, b) => a + b, 0) / previousWeek.length;
-
-    if (previousWeekAvg === 0) return 0;
-    return ((currentWeekAvg - previousWeekAvg) / previousWeekAvg) * 100;
-  }
-
-  private calculateMonthlyAverageComparison(data: number[]): number {
-    if (data.length === 0) return 0;
-
-    // Calculate current value (most recent day)
-    const currentValue = data[data.length - 1];
-
-    // Calculate average of all values
-    const average = data.reduce((a, b) => a + b, 0) / data.length;
-
-    if (average === 0) return 0;
-    return ((currentValue - average) / average) * 100;
+    
+    return this.metricCalculation.getMetricDataForComparisons(
+      metricData,
+      selectedDay,
+      deviceType
+    );
   }
 }

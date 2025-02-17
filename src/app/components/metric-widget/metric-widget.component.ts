@@ -35,10 +35,10 @@ export class MetricWidgetComponent extends BaseMetricWidget implements OnInit, O
     protected override dashboardState: DashboardStateService,
     protected override numberAnimation: NumberAnimationService,
     protected override errorHandler: ErrorHandler,
-    private chartService: ChartService,
-    private metricCalculation: MetricCalculationService
+    protected override metricCalculation: MetricCalculationService,
+    private chartService: ChartService
   ) {
-    super(dashboardState, numberAnimation, errorHandler);
+    super(dashboardState, numberAnimation, errorHandler, metricCalculation);
   }
 
   override ngOnInit() {

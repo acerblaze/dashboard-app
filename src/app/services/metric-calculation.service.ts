@@ -1,21 +1,44 @@
 import { Injectable } from '@angular/core';
-import { DailyMetric, MetricData } from '../data/mock-metrics';
+import { MetricData, DailyMetric } from '../data/mock-metrics';
 import { DeviceType } from './dashboard-state.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MetricCalculationService {
-  calculateCumulativeValue(metricData: MetricData, selectedDay: string, deviceType: DeviceType): number {
-    return metricData.dailyData
-      .filter(d => d.date <= selectedDay)
-      .reduce((sum, day) => {
-        const value = this.getValueForDeviceType(day, deviceType);
-        return sum + value;
-      }, 0);
+  findDayData(metricData: MetricData, selectedDay: string): DailyMetric {
+    const dayData = metricData.dailyData.find(d => d.date === selectedDay);
+    if (!dayData) {
+      throw new Error(`No data found for selected day: ${selectedDay}`);
+    }
+    return dayData;
   }
 
-  calculateProgressPercentage(metricData: MetricData, selectedDay: string, deviceType: DeviceType): number {
+  getDeviceValue(data: DailyMetric, deviceType: DeviceType): number {
+    return deviceType === 'total' ? data.total :
+           deviceType === 'desktop' ? data.desktop : 
+           data.mobile;
+  }
+
+  calculateCurrentValue(selectedDayData: DailyMetric, deviceType: DeviceType): number {
+    return this.getDeviceValue(selectedDayData, deviceType);
+  }
+
+  calculateCumulativeValue(
+    metricData: MetricData,
+    selectedDay: string,
+    deviceType: DeviceType
+  ): number {
+    return metricData.dailyData
+      .filter(d => d.date <= selectedDay)
+      .reduce((sum, day) => sum + this.getDeviceValue(day, deviceType), 0);
+  }
+
+  calculateProgressPercentage(
+    metricData: MetricData,
+    selectedDay: string,
+    deviceType: DeviceType
+  ): number {
     const cumulativeValue = this.calculateCumulativeValue(metricData, selectedDay, deviceType);
     return (cumulativeValue / metricData.monthlyTarget) * 100;
   }
@@ -52,11 +75,14 @@ export class MetricCalculationService {
     const startIndex = Math.max(0, selectedDayIndex - 29);
     const relevantDays = metricData.dailyData.slice(startIndex, selectedDayIndex + 1);
 
-    return relevantDays.map(d => this.getValueForDeviceType(d, deviceType));
+    return relevantDays.map(d => this.getDeviceValue(d, deviceType));
   }
 
-  private getValueForDeviceType(day: DailyMetric, deviceType: DeviceType): number {
-    return deviceType === 'total' ? day.total :
-           deviceType === 'desktop' ? day.desktop : day.mobile;
+  formatNumber(value: number): string {
+    return new Intl.NumberFormat('en-US').format(Math.round(value));
+  }
+
+  formatPercentage(value: number): string {
+    return `${Math.round(value)}%`;
   }
 } 
