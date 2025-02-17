@@ -117,7 +117,8 @@ export abstract class BaseMetricWidget implements OnInit, OnDestroy {
       this.numberAnimation.animateValue(
         this.lastCurrentValue,
         newCurrentValue,
-        (value: number) => this.displayValue = value
+        (value: number) => this.displayValue = value,
+        { precision: 0 }
       );
       this.lastCurrentValue = newCurrentValue;
       this.currentValue = newCurrentValue;

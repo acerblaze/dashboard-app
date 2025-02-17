@@ -171,7 +171,7 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
         this.tertiaryChart = new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+            labels: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
             datasets: [{
               label: 'Average by Day of Week',
               data: Array(7).fill(0),
@@ -325,7 +325,7 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
   }
 
   private generateDailyPattern(metricData: MetricData, deviceType: DeviceType): number[] {
-    // Initialize arrays to store sums and counts for each day of the week
+    // Initialize arrays to store sums and counts for each day of the week (0 = Monday, 6 = Sunday)
     const dailySums = Array(7).fill(0);
     const dailyCounts = Array(7).fill(0);
 
@@ -335,7 +335,9 @@ export class MetricDetailsComponent extends BaseMetricWidget implements OnInit, 
                    deviceType === 'desktop' ? day.desktop : day.mobile;
       
       const date = new Date(day.date);
-      const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      let dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      // Convert to Monday-based index (0 = Monday, 6 = Sunday)
+      dayOfWeek = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
 
       dailySums[dayOfWeek] += value;
       dailyCounts[dayOfWeek]++;
