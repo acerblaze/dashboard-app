@@ -131,7 +131,7 @@
           }
 
           .progress-container {
-            height: 24px;
+            height: 18px;
             background: #e9ecef;
             border-radius: 12px;
             overflow: hidden;
@@ -162,10 +162,6 @@
 
               &.pageviews {
                 background: #9c27b0;
-              }
-
-              &.reached {
-                background: #2e7d32;
               }
             }
           }

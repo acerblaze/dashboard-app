@@ -55,10 +55,9 @@
           </div>
           <div class="progress-container">
             <div class="progress-bar" 
-                 [style.width.%]="progressPercentage"
+                 [style.width.%]="progressPercentage > 100 ? 100 : progressPercentage"
                  [class.users]="metricType === 'users'"
-                 [class.pageviews]="metricType === 'pageViews'"
-                 [class.reached]="isTargetReached">
+                 [class.pageviews]="metricType === 'pageViews'">
               <span class="progress-percentage">{{ actualProgressPercentage | number:'1.0-0' }}%</span>
             </div>
           </div>
