@@ -4,10 +4,24 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
-import { MatNativeDateModule } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MomentDateAdapter, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { DashboardStateService } from '../../services/dashboard-state.service';
+import * as moment from 'moment';
+
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD-MM-YYYY',
+  },
+  display: {
+    dateInput: 'DD-MM-YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
 
 @Component({
   selector: 'app-day-selector',
@@ -19,9 +33,17 @@ import { DashboardStateService } from '../../services/dashboard-state.service';
     MatButtonModule,
     MatIconModule,
     MatDatepickerModule,
-    MatNativeDateModule,
     MatFormFieldModule,
     MatInputModule
+  ],
+  providers: [
+    {
+      provide: DateAdapter,
+      useClass: MomentDateAdapter,
+      deps: [MAT_DATE_LOCALE]
+    },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { strict: true } }
   ],
   template: `
     <mat-form-field appearance="outline" class="date-picker-field">
@@ -122,31 +144,25 @@ import { DashboardStateService } from '../../services/dashboard-state.service';
   `]
 })
 export class DaySelectorComponent implements OnInit {
-  selectedDate: Date = new Date('2025-02-01');
-  minDate: Date;
-  maxDate: Date;
+  selectedDate = moment.utc('2025-02-01');
+  minDate = moment.utc('2025-02-01');
+  maxDate = moment.utc('2025-02-28');
   
-  constructor(private dashboardState: DashboardStateService) {
-    this.minDate = new Date('2025-02-01');
-    this.maxDate = new Date('2025-02-28');
-  }
+  constructor(private dashboardState: DashboardStateService) {}
 
   ngOnInit() {
     const currentDay = this.dashboardState.getCurrentSelectedDay();
-    this.selectedDate = new Date(currentDay + 'T12:00:00');
+    this.selectedDate = moment.utc(currentDay);
   }
 
   onDateChange(event: any): void {
     const selectedDate = event.value;
     this.selectedDate = selectedDate;
-    const year = selectedDate.getFullYear();
-    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const day = String(selectedDate.getDate()).padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
+    const dateString = selectedDate.format('YYYY-MM-DD');
     this.dashboardState.setSelectedDay(dateString);
   }
 
-  dateClass = (date: Date): string => {
+  dateClass = (date: moment.Moment): string => {
     return '';
   }
 } 
