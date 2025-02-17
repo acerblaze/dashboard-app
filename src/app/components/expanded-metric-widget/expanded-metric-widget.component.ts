@@ -29,7 +29,7 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
   private trendChart: Chart | null = null;
   isTargetReached: boolean = false;
   override progressPercentage: number = 0;
-  actualProgressPercentage: number = 0;
+  override displayProgressPercentage: number = 0;
 
   // Add display properties for animated values
   private lastAverageComparison: number = 0;
@@ -144,7 +144,20 @@ export class ExpandedMetricWidgetComponent extends BaseMetricWidget implements O
         return sum + value;
       }, 0);
 
-    this.isTargetReached = (cumulativeValue / metricData.monthlyTarget) * 100 >= 100;
+    const newProgressPercentage = (cumulativeValue / metricData.monthlyTarget) * 100;
+    
+    // Animate the progress percentage if it has changed significantly
+    if (Math.abs(this.progressPercentage - newProgressPercentage) > 0.1) {
+      this.numberAnimation.animateValue(
+        this.progressPercentage,
+        newProgressPercentage,
+        (value: number) => this.displayProgressPercentage = value,
+        { precision: 1 }
+      );
+      this.progressPercentage = newProgressPercentage;
+    }
+
+    this.isTargetReached = this.progressPercentage >= 100;
   }
 
   getHighestValue(): number {

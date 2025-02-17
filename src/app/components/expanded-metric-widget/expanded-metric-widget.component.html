@@ -59,7 +59,7 @@
                  [class.users]="metricType === 'users'"
                  [class.pageviews]="metricType === 'pageViews'"
                  [class.completed]="progressPercentage >= 100">
-              <span class="progress-percentage">{{ actualProgressPercentage | number:'1.0-0' }}%</span>
+              <span class="progress-percentage">{{ displayProgressPercentage | number:'1.0-0' }}%</span>
             </div>
           </div>
         </div>
